@@ -1,0 +1,284 @@
+---
+import Icon from '../components/Icon.astro';
+import { contactIntro, profile, socials } from '../data/site';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { withBase } from '../utils/paths';
+---
+
+<BaseLayout title={`Contact — ${profile.name}`} description={contactIntro}>
+  <div class="contact">
+    <div class="contact__main">
+      <h1 class="page-title enter" style="--i: 0">Contact</h1>
+      <p class="contact__intro enter" style="--i: 1">{contactIntro}</p>
+
+      <section class="card email-card enter" style="--i: 2" aria-labelledby="email-title">
+        <h2 id="email-title" class="label">Email</h2>
+        <a class="text-link email-card__address" href={`mailto:${profile.email}`} data-email-address>{profile.email}</a>
+        <div class="email-card__actions">
+          <a class="btn btn--primary" href={`mailto:${profile.email}`} aria-label="Send email">Send</a>
+          <button type="button" class="btn btn--secondary" data-copy-email={profile.email} aria-label="Copy email address">
+            Copy
+          </button>
+        </div>
+        <p class="visually-hidden" aria-live="polite" data-copy-status></p>
+      </section>
+    </div>
+
+    <section class="card social-card enter" style="--i: 3" aria-labelledby="social-title">
+      <h2 id="social-title" class="label">Find Me On</h2>
+      <ul>
+        {
+          socials.map(({ name, handle, href }) => (
+            <li>
+              <a class="social" href={href} target="_blank" rel="noopener">
+                <span class="social__text">
+                  <span class="social__name">{name}</span>
+                  <span class="social__handle">{handle}</span>
+                </span>
+                <span class="social__arrow" aria-hidden="true">
+                  ↗
+                </span>
+                <span class="visually-hidden">(opens in a new tab)</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+      <div class="social-card__cv">
+        <a class="btn btn--primary" href={withBase(profile.cvPath)} download>
+          <Icon name="download" />
+          Download CV (PDF)
+        </a>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  /* Two equal columns; the email card and the CV button sit on the same bottom line. */
+  .contact {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 28px 48px;
+    padding: 88px 0 112px;
+  }
+
+  .contact__main {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    min-width: 0;
+  }
+
+  .contact__intro {
+    font-size: 19px;
+    line-height: 1.6;
+    color: var(--muted);
+  }
+
+  /* ---------- Email card ---------- */
+  .email-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: auto;
+    padding: 20px;
+  }
+
+  .email-card__address {
+    font-size: 24px;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+
+  .email-card__actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  /* ---------- Find Me On card ---------- */
+  .social-card {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 20px;
+  }
+
+  .social {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    min-height: 60px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .social__text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    transition: transform 200ms var(--ease-out);
+  }
+
+  .social:hover {
+    opacity: 1;
+  }
+
+  @media (hover: hover) {
+    .social:hover .social__text {
+      transform: translateX(4px);
+    }
+  }
+
+  .social__name {
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--accent);
+  }
+
+  .social__handle {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .social__arrow {
+    color: var(--accent);
+  }
+
+  .social-card__cv {
+    display: flex;
+    flex-direction: column;
+    margin-top: auto;
+    padding-top: 16px;
+  }
+
+  /* 640–1023: still two columns; the address shrinks but never wraps. */
+  @media (max-width: 1023.98px) {
+    .contact {
+      column-gap: 24px;
+      padding: 56px 0 72px;
+    }
+
+    .contact__intro {
+      font-size: 17px;
+    }
+
+    /* 20px, scaled down just enough on narrow tablets that the address never wraps.
+       The address is ~14× its font size wide; the card's inner width is ~50vw − 86px
+       (10px extra margin for a classic scrollbar). */
+    .email-card__address {
+      font-size: min(20px, calc((50vw - 96px) / 14));
+      white-space: nowrap;
+    }
+  }
+
+  /* < 640: single column — h1, intro, email card, then Find Me On. */
+  @media (max-width: 639.98px) {
+    .contact {
+      grid-template-columns: minmax(0, 1fr);
+      row-gap: 16px;
+      padding: 32px 0 48px;
+    }
+
+    .contact__main {
+      gap: 16px;
+    }
+
+    .contact__intro {
+      font-size: 16px;
+    }
+
+    .email-card {
+      margin-top: 8px;
+      padding: 18px;
+    }
+
+    .email-card__address {
+      font-size: 18px;
+      white-space: normal;
+    }
+
+    .social-card {
+      padding: 18px;
+    }
+  }
+</style>
+
+<script>
+  function fallbackCopy(text: string): boolean {
+    const field = document.createElement('textarea');
+    field.value = text;
+    field.setAttribute('readonly', '');
+    field.style.position = 'fixed';
+    field.style.opacity = '0';
+    document.body.appendChild(field);
+    field.select();
+    let ok = false;
+    try {
+      ok = document.execCommand('copy');
+    } catch {
+      ok = false;
+    }
+    field.remove();
+    return ok;
+  }
+
+  async function copy(text: string): Promise<boolean> {
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch {
+        // Fall through to the legacy approach.
+      }
+    }
+    return fallbackCopy(text);
+  }
+
+  // Runs right away and on every page view after a client-side navigation; only the
+  // Contact page has the button, and each button is wired once.
+  function initCopyEmail() {
+    const button = document.querySelector<HTMLButtonElement>('[data-copy-email]');
+    const status = document.querySelector<HTMLElement>('[data-copy-status]');
+    if (!button || !status || button.dataset.copyReady !== undefined) return;
+    button.dataset.copyReady = '';
+
+    // Only the visible text changes; the accessible name stays "Copy email address" (aria-label)
+    // and the result is announced through the aria-live status.
+    const defaultLabel = button.textContent?.trim() || 'Copy';
+    let resetTimer: number | undefined;
+
+    button.addEventListener('click', async () => {
+      const email = button.dataset.copyEmail ?? '';
+      const ok = await copy(email);
+
+      if (ok) {
+        button.textContent = 'Copied ✓';
+        status.textContent = 'Email address copied to clipboard.';
+      } else {
+        // Last resort: select the address so it can be copied manually.
+        const address = document.querySelector('[data-email-address]');
+        const selection = window.getSelection();
+        if (address && selection) {
+          const range = document.createRange();
+          range.selectNodeContents(address);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+        status.textContent = 'Could not copy automatically. The email address is selected; copy it manually.';
+      }
+
+      window.clearTimeout(resetTimer);
+      resetTimer = window.setTimeout(() => {
+        button.textContent = defaultLabel;
+        status.textContent = '';
+      }, 2000);
+    });
+  }
+
+  initCopyEmail();
+  document.addEventListener('astro:page-load', initCopyEmail);
+</script>

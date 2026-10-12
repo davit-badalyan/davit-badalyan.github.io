@@ -1,0 +1,239 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Resume (dark) — design reference</title><style>@font-face{font-family:'Instrument Sans';src:url('../fonts/InstrumentSans.ttf');font-weight:100 900}
+@font-face{font-family:'JetBrains Mono';src:url('../fonts/JetBrainsMono.ttf');font-weight:100 900}
+html,body{margin:0}
+.site{min-height:100vh;container-type:inline-size;container-name:site;background:var(--bg);color:var(--text);font-family:'Instrument Sans','Helvetica Neue',sans-serif;font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.site[data-theme=light]{--bg:#F6F5F2;--surface:#FFFFFF;--media:#E7E4DD;--text:#141414;--muted:#55524C;--line:#DAD7D0;--chip:#EEECE7;--accent:#2F4BFF;--on-accent:#FFFFFF}
+.site[data-theme=dark]{--bg:#0E1014;--surface:#171A21;--media:#1D2129;--text:#ECEEF2;--muted:#A9B0BB;--line:#272C35;--chip:#272C35;--accent:#8EA2FF;--on-accent:#0E1014}
+:where(.site) *{box-sizing:border-box}
+:where(.site) a{color:inherit;text-decoration:none}
+:where(.site) p{margin:0;text-align:justify;hyphens:manual}
+:where(.site) :is(h1,h2,h3){margin:0;font-weight:500}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace}
+.wrap{max-width:1224px;margin:0 auto;padding:0 32px}
+.label{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0}
+.link{color:var(--accent)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.btn{min-height:48px;padding:0 22px;display:inline-flex;align-items:center;justify-content:center;gap:10px;border-radius:10px;font-weight:600;font-size:15px;border:1px solid transparent;font-family:inherit;cursor:pointer}
+.btn-p{background:var(--accent);color:var(--on-accent)}
+.btn-s{background:var(--surface);border-color:var(--line);color:var(--text);font-weight:500}
+.page-title{font-size:56px;line-height:1.05;letter-spacing:-.03em}
+
+/* header */
+.hdr{display:grid;grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"brand nav tgl";align-items:center;column-gap:24px;padding:16px 0;border-bottom:1px solid var(--line)}
+.brand{grid-area:brand;display:flex;align-items:center;gap:12px;min-height:44px;min-width:0}
+.brand img{width:40px;height:40px;border-radius:50%;object-fit:cover;border:1px solid var(--line);flex:none}
+.brand-txt{display:flex;flex-direction:column;line-height:1.2;min-width:0}
+.brand-name{font-weight:600;font-size:17px;white-space:nowrap}
+.brand-loc{display:flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);margin-top:3px;white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex:none}
+.nav{grid-area:nav;display:flex;gap:26px;font-size:15px}
+.nav a{min-height:44px;display:flex;align-items:center;color:var(--muted);border-bottom:2px solid transparent}
+.nav a.on{color:var(--text);border-bottom-color:var(--accent)}
+.tgl{grid-area:tgl;width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.site[data-theme=light] .i-sun,.site[data-theme=dark] .i-moon{display:none}
+
+/* footer */
+.ftr{margin-top:24px;border-top:1px solid var(--line);padding:28px 0 28px;display:flex;flex-direction:column;gap:20px;font-size:14px;color:var(--muted)}
+.ftr-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px 24px}
+.ftr-links{display:flex;gap:24px}
+.ftr-copy{text-align:center;font-size:13px;padding-top:20px;border-top:1px solid var(--line)}
+
+/* home */
+.hero{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:56px;align-items:center;padding:88px 0 88px}
+.hero h1{font-size:60px;line-height:1.04;letter-spacing:-.03em}
+.hero p{margin-top:24px;font-size:18px;line-height:1.6;color:var(--muted);max-width:560px}
+.hero .btns{display:flex;gap:12px;margin-top:36px;flex-wrap:wrap}
+.frames{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.frame{aspect-ratio:9/16;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;justify-content:flex-end;gap:6px}
+.frame:nth-child(2){margin-top:44px}
+.frame .num{font-size:40px;font-weight:500;letter-spacing:-.02em;line-height:1}
+.sec{padding-bottom:72px}
+.sec-head{display:flex;justify-content:space-between;align-items:baseline;gap:16px;border-bottom:1px solid var(--text);padding-bottom:14px}
+.sec-head h2{font-size:24px}
+.count{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted)}
+.tbl-cols,.row{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1.9fr) 168px 104px minmax(0,.9fr) 44px;gap:16px;align-items:center}
+.tbl-cols{padding:12px 0;border-bottom:1px solid var(--line)}
+.tbl-cols span{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.item{border-bottom:1px solid var(--line)}
+.row{width:100%;min-height:72px;padding:0;border:0;background:transparent;color:var(--text);text-align:left;font-family:inherit;cursor:pointer}
+.c-name{font-size:19px;font-weight:500}
+.c-role{color:var(--muted)}
+.c-per,.c-dur,.c-cnt,.c-meta{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted)}
+.c-meta{display:none}
+.c-meta>span{white-space:nowrap}
+.chev{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;justify-self:end;transition:transform 360ms cubic-bezier(.2,.7,.2,1),border-color 200ms,color 200ms}
+.item.open .chev{transform:rotate(180deg);border-color:var(--accent);color:var(--accent)}
+.panel{display:grid;grid-template-rows:0fr;transition:grid-template-rows 360ms cubic-bezier(.2,.7,.2,1)}
+.item.open .panel{grid-template-rows:1fr}
+.panel>.panel-in{min-height:0;overflow:hidden}
+.panel p,.sec-about{font-size:15px;color:var(--muted)}
+.panel-in{display:flex;flex-direction:column;gap:16px;padding:0}
+.panel-in>:first-child{margin-top:4px}
+.panel-in>:last-child{margin-bottom:28px}
+:where(.site) .nda{font-size:14px;color:var(--muted);text-align:left;margin-top:-8px}
+.note{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted);padding:14px 16px;border:1px dashed var(--line);border-radius:10px}
+.sec-about{margin:18px 0 16px}
+
+/* about */
+.about{display:grid;grid-template-columns:352px minmax(0,1fr);grid-template-areas:"photo intro" "facts groups" ". btns";column-gap:36px;row-gap:24px;padding:72px 0 88px}
+.photo{grid-area:photo;position:relative;min-height:440px}
+.photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 25%;border-radius:16px;border:1px solid var(--line)}
+.intro{grid-area:intro;display:flex;flex-direction:column;gap:20px}
+.intro p{font-size:20px;line-height:1.6}
+.facts{grid-area:facts;margin:0;padding:2px 18px;display:flex;flex-direction:column;container-type:inline-size;container-name:facts}
+@container facts (max-width:330px){.fact dd{font-size:13px}.fact dt{font-size:11px}}
+@container facts (max-width:300px){.fact dd{font-size:12px}.fact dt{font-size:10.5px}.fact{gap:10px}}
+.fact{flex:1;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:12px 0;font-size:14px}
+.fact+.fact{border-top:1px solid var(--line)}
+.fact dt{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)}
+.fact dd{margin:0;text-align:right;white-space:nowrap}
+.groups{grid-area:groups;padding:4px 18px}
+.grp{padding:18px 0;display:flex;flex-direction:column;gap:12px}
+.grp+.grp{border-top:1px solid var(--line)}
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pill{padding:7px 10px;border-radius:999px;border:1px solid var(--line);font-size:14px}
+.chip{padding:7px 12px;border-radius:8px;background:var(--chip);font-family:'JetBrains Mono',monospace;font-size:13px}
+.about .btns{grid-area:btns;display:flex;justify-content:flex-end;gap:12px}
+
+/* resume */
+.rs{padding:72px 0 96px;display:flex;flex-direction:column;gap:64px}
+.rs-head{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:20px;padding-bottom:24px;border-bottom:1px solid var(--text)}
+.rs-head .sub{margin-top:10px;color:var(--muted)}
+.rs-sec{display:grid;grid-template-columns:260px minmax(0,1fr);gap:40px}
+.ent{padding:20px 0;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.ent-top{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:4px 16px}
+.ent-top h3{font-size:19px}
+.dates{display:inline-grid;grid-template-columns:19ch 1ch 11ch;column-gap:.7ch;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);white-space:nowrap}
+.ent-sub{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 16px;font-size:15px}
+.ent-links{display:flex;gap:12px;font-family:'JetBrains Mono',monospace;font-size:12px}
+.ent p{font-size:15px;line-height:1.65;color:var(--muted)}
+.ent .field{font-size:14px;color:var(--muted)}
+.skill{display:grid;grid-template-columns:220px minmax(0,1fr);gap:16px;padding:14px 0;border-bottom:1px solid var(--line)}
+.skill:first-child{border-top:1px solid var(--line)}
+.skill .k{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)}
+.soft{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;font-size:15px;line-height:1.7}
+.soft strong{font-weight:600;display:block;margin-bottom:4px}
+.plinks{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.plinks a{min-height:40px;padding:0 14px;display:flex;align-items:center;border:1px solid var(--line);border-radius:999px;font-size:14px;color:var(--accent)}
+
+/* contact */
+.contact{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:48px;row-gap:28px;padding:88px 0 112px;align-items:stretch}
+.c-left{display:flex;flex-direction:column;gap:24px}
+.c-left>p{font-size:19px;line-height:1.6;color:var(--muted)}
+.email{margin-top:auto;padding:20px;display:flex;flex-direction:column;gap:12px}
+.email a.addr{font-size:24px;font-weight:500;color:var(--accent);word-break:break-all}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.find{padding:20px;display:flex;flex-direction:column}
+.soc{min-height:60px;display:flex;justify-content:space-between;align-items:center;gap:16px;border-bottom:1px solid var(--line)}
+.soc .n{font-size:17px;font-weight:500;color:var(--accent)}
+.soc .h{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted)}
+.find .cv{margin-top:auto;padding-top:16px}
+.find .cv .btn{width:100%}
+
+
+.viz{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-start;margin-bottom:10px}
+.bar{display:flex;gap:2px;height:10px;border-radius:999px;overflow:hidden}
+.bar span{min-width:3px}
+.legend{margin-top:14px;display:flex;flex-direction:column;gap:7px}
+.lg{display:flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted);white-space:nowrap}
+.lg i{width:8px;height:8px;border-radius:2px;flex:none}
+.lg b{font-weight:500;color:var(--text);min-width:3ch;text-align:right}
+.studios{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.studios li{display:flex;flex-direction:column;gap:1px;padding:7px 0;border-bottom:1px solid var(--line);font-size:12.5px;line-height:1.25}
+.studios li:first-child{padding-top:0}
+.studios .yr{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--muted)}
+.tl{position:relative;flex:1;margin:6px 0 4px}
+.tl .axis{position:absolute;left:44px;top:0;bottom:0;width:1px;background:var(--line)}
+.tl .seg{position:absolute;left:40px;width:9px;border-radius:999px;background:var(--accent)}
+.tl .tk{position:absolute;left:0;transform:translateY(-50%);font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)}
+
+/* ---------- md: 1024–1279 ---------- */
+@container site (max-width:1279px){
+ .hero h1{font-size:52px}
+ .frame{padding:14px}
+ .lg{font-size:10px;gap:6px}
+ .studios li{font-size:12px}
+ .about{grid-template-columns:344px minmax(0,1fr)}
+ .intro p{font-size:18px}
+ .rs-sec{grid-template-columns:200px minmax(0,1fr);gap:32px}
+}
+/* ---------- sm: 640–1023 (tablet portrait, phone landscape) ---------- */
+@container site (max-width:1023px){
+ .nav{gap:20px}
+ .hero{grid-template-columns:minmax(0,1fr);gap:32px;padding:56px 0 56px}
+ .hero h1{font-size:44px}
+ .hero p{max-width:none}
+ .frames{gap:10px}
+ .frame{aspect-ratio:auto;padding:14px 16px;gap:4px}
+ .frame:nth-child(2){margin-top:0}
+ .viz{display:none}
+ .frame .num{font-size:28px}
+ .tbl-cols{display:none}
+ .row{grid-template-columns:minmax(0,1fr) 44px;grid-template-areas:"name chev" "role chev" "meta chev";row-gap:3px;padding:14px 0;min-height:0}
+ .c-name{grid-area:name}.c-role{grid-area:role}.c-meta{grid-area:meta;display:block}.chev{grid-area:chev}
+ .c-per,.c-dur,.c-cnt{display:none}
+ .page-title{font-size:44px}
+ .about{grid-template-columns:260px minmax(0,1fr);grid-template-areas:"photo facts" "intro intro" "groups groups" "btns btns";padding:48px 0 64px}
+ .photo{position:static;min-height:0}
+ .photo img{position:static;aspect-ratio:4/5;height:auto;display:block}
+ .rs{padding:48px 0 72px;gap:48px}
+ .rs-sec{grid-template-columns:minmax(0,1fr);gap:4px}
+ .contact{column-gap:24px;padding:56px 0 72px}
+ .c-left>p{font-size:17px}
+ .email a.addr{font-size:20px}
+}
+/* ---------- xs: < 640 (phones portrait) ---------- */
+@container site (max-width:639px){
+ .wrap{padding:0 16px}
+ .hdr{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"brand tgl" "nav nav";row-gap:6px;padding:10px 0 0}
+ .brand img{width:36px;height:36px}
+ .brand-name{font-size:16px}
+ .nav{justify-content:space-between;gap:0}
+ .hero{padding:36px 0 44px;gap:24px}
+ .hero h1{font-size:36px}
+ .hero p{font-size:16px;margin-top:16px}
+ .hero .btns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:24px}
+ .frame{padding:12px}
+ .frame .num{font-size:24px}
+ .frame .label{font-size:10px}
+ .sec{padding-bottom:48px}
+ .sec-head{padding-bottom:10px}
+ .sec-head h2{font-size:20px}
+ .c-name{font-size:17px}.c-role{font-size:14px}.c-meta{font-size:11px}
+ .sec-about{font-size:14px}
+ .page-title{font-size:36px}
+ .about{grid-template-columns:minmax(0,1fr);grid-template-areas:"photo" "facts" "intro" "groups" "btns";row-gap:20px;padding:24px 0 48px}
+ .photo img{max-height:480px;aspect-ratio:4/5}
+ .fact dd{white-space:normal}
+ .intro p{font-size:17px}
+ .groups{padding:2px 16px}
+ .about .btns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .rs{padding:32px 0 48px;gap:40px}
+ .rs-head .btn{width:100%}
+ .ent-top,.ent-sub{flex-direction:column;align-items:flex-start}
+ .ent-links{margin-top:2px}
+ .skill{grid-template-columns:minmax(0,1fr);gap:6px}
+ .soft{grid-template-columns:minmax(0,1fr)}
+ .contact{grid-template-columns:minmax(0,1fr);padding:32px 0 48px;row-gap:16px}
+ .c-left{gap:16px}
+ .c-left>p{font-size:16px}
+ .email{margin-top:8px;padding:18px}
+ .email a.addr{font-size:18px}
+ .find{padding:18px}
+ .ftr{padding:24px 0;gap:16px}
+ .ftr-top{flex-direction:column;justify-content:center;text-align:center;gap:10px}
+ .ftr-links{justify-content:center}
+}
+</style></head><body><div class="site" data-theme="dark"><div class="wrap"><header class="hdr"><a href="#" class="brand"><img src="../images/avatar.jpg" alt="" width="40" height="40"><span class="brand-txt"><span class="brand-name">Davit Badalyan</span><span class="brand-loc"><span class="dot"></span>Yerevan, Armenia</span></span></a>
+<nav class="nav" aria-label="Main"><a href="#" class="">Work</a><a href="#" class="">About</a><a href="#" class="on">Resume</a><a href="#" class="">Contact</a></nav>
+<button type="button" class="tgl" aria-label="Switch to light mode"><svg class="i-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg><svg class="i-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg></button></header>
+<main class="rs"><div class="rs-head"><div><h1 class="page-title">Resume</h1><div class="sub">Game Developer, Programmer, CS &amp; CG Enthusiast</div></div><a href="#" class="btn btn-p"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"></path></svg>Download CV (PDF)</a></div>
+<section class="rs-sec"><h2 class="label">About Me</h2><p style="font-size:17px;line-height:1.65">Game Developer, Programmer, and CS &amp; CG Enthusiast, experienced in Unity and Web-Based Game Development, including Playable Ads and HTML5 Games, with Bachelor&#x27;s and Master&#x27;s degrees in Information Technology from the National Polytechnic University of Armenia. My experience spans Hyper-Casual, Hybrid-Casual, and Midcore Game Development, as well as Interactive Marketing Creatives, with a focus on Gameplay Systems, Architecture, Tools, UI, and Core Game Logic. I enjoy exploring Computer Science, Computer Graphics, Math, and Game Development, and combining them throughout my work, especially in collaborative, feedback-driven environments where I can take ownership, improve product quality, and grow through technical challenges.</p></section>
+<section class="rs-sec"><h2 class="label">Work Experience</h2><div><article class="ent"><div class="ent-top"><h3>HTML5 Games &amp; Playable Ads Developer</h3><span class="dates"><span>Oct 2025 – Oct 2026</span><span aria-hidden="true">·</span><span>1 yr 1 mo</span></span></div><div class="ent-sub"><span><strong>Playrix</strong> <span style="color:var(--muted)">· Yerevan, Armenia</span></span><span class="ent-links"><a class="link" href="https://playrix.com/">Website ↗</a><a class="link" href="https://www.linkedin.com/company/playrix-entertainment/">LinkedIn ↗</a></span></div><p>Worked as a Playable Ads Developer within the Marketing Creatives team at Playrix, creating engaging and Interactive Gameplay Experiences for titles such as Fishdom, Township, Gardenscapes, and Homescapes. Focused on Performance Optimization, Visual Polish, and Player Engagement, delivering high-quality Creatives used in large-scale User Acquisition campaigns.</p></article><article class="ent"><div class="ent-top"><h3>Computer Graphics Apprentice</h3><span class="dates"><span>Mar 2026 – Apr 2026</span><span aria-hidden="true">·</span><span>2 mos</span></span></div><div class="ent-sub"><span><strong>Triada Studio</strong> <span style="color:var(--muted)">· Yerevan, Armenia</span></span><span class="ent-links"><a class="link" href="https://triadastudio.com/">Website ↗</a><a class="link" href="https://www.linkedin.com/company/triada-studio/">LinkedIn ↗</a></span></div><p>Engaged in Computer Graphics Studies and Research as part of an Academic Practice, while refining my Master’s Thesis Project on “Shaders In Computer Graphics”. Collaborated with Industry Professionals to deepen my understanding of the field.</p></article><article class="ent"><div class="ent-top"><h3>Mobile Game Developer</h3><span class="dates"><span>Jul 2023 – Sep 2025</span><span aria-hidden="true">·</span><span>2 yrs 3 mos</span></span></div><div class="ent-sub"><span><strong>ArmNomads Games</strong> <span style="color:var(--muted)">· Yerevan, Armenia</span></span><span class="ent-links"><a class="link" href="https://www.linkedin.com/company/armnomads/">LinkedIn ↗</a></span></div><p>Worked on Midcore and Hybrid-Casual Mobile Games, developing scalable Gameplay Systems, Tools, In-Game Logic and User Interfaces. Collaborated with Artists and Designers to create polished and engaging Player Experiences. Collaborated with international Publishing Partners and Studios to iterate on Game Design, optimize Monetization Systems, and improve Game Performance based on Testing and Player Feedback.</p></article><article class="ent"><div class="ent-top"><h3>Mobile Game Developer</h3><span class="dates"><span>Sep 2022 – May 2023</span><span aria-hidden="true">·</span><span>9 mos</span></span></div><div class="ent-sub"><span><strong>Cassette LLC</strong> <span style="color:var(--muted)">· Yerevan, Armenia</span></span><span class="ent-links"><a class="link" href="https://www.linkedin.com/company/cassette-llc/">LinkedIn ↗</a></span></div><p>Worked on Hyper-Casual Games, designing and implementing Gameplay Mechanics, Systems, and UI. Focused on Rapid Iteration, Build Optimization, and delivering a smooth Player Experience. Collaborated with leading Publishers such as Voodoo and Supersonic Studios, iterating on Games based on Performance Data and Testing Results.</p></article><article class="ent"><div class="ent-top"><h3>HTML5 Games &amp; Playable Ads Developer</h3><span class="dates"><span>Dec 2020 – Jun 2022</span><span aria-hidden="true">·</span><span>1 yr 7 mos</span></span></div><div class="ent-sub"><span><strong>Armath AI</strong> <span style="color:var(--muted)">· Yerevan, Armenia</span></span><span class="ent-links"><a class="link" href="https://www.linkedin.com/company/armathai/">LinkedIn ↗</a></span></div><p>Worked on Playable Ads and HTML5 Games, creating lightweight and engaging Interactive Experiences optimized for fast loading and smooth Performance across Browsers and Devices. Collaborated with major Ad Networks and Platforms, including CrossInstall, MoPub, Aarki, Playrix, and Voodoo, delivering high-performance Creatives and Games across various Platforms.</p></article></div></section>
+<section class="rs-sec"><h2 class="label">Education and Training</h2><div><article class="ent"><div class="ent-top"><h3>Master&#x27;s Degree</h3><span class="dates"><span>Sep 2024 – Jun 2026</span><span aria-hidden="true">·</span><span>2 yrs</span></span></div><div class="ent-sub"><span><strong>National Polytechnic University of Armenia</strong> <span style="color:var(--muted)">· Yerevan, Armenia</span></span><span class="ent-links"><a class="link" href="https://polytech.am/">Website ↗</a></span></div><span class="field">Field of study: Information Technology</span></article><article class="ent"><div class="ent-top"><h3>Bachelor&#x27;s Degree</h3><span class="dates"><span>Sep 2020 – Jun 2024</span><span aria-hidden="true">·</span><span>4 yrs</span></span></div><div class="ent-sub"><span><strong>National Polytechnic University of Armenia</strong> <span style="color:var(--muted)">· Yerevan, Armenia</span></span><span class="ent-links"><a class="link" href="https://polytech.am/">Website ↗</a></span></div><span class="field">Field of study: Information Technology</span></article><article class="ent"><div class="ent-top"><h3>Student</h3><span class="dates"><span>Oct 2017 – Feb 2021</span><span aria-hidden="true">·</span><span>3 yrs 5 mos</span></span></div><div class="ent-sub"><span><strong>Tumo Center for Creative Technologies</strong> <span style="color:var(--muted)">· Yerevan, Armenia</span></span><span class="ent-links"><a class="link" href="https://tumo.org/">Website ↗</a></span></div><span class="field">Field of study: Game Development, Programming, 3D Modeling</span></article><article class="ent"><div class="ent-top"><h3>Pre-University Diploma in Software Technicity</h3><span class="dates"><span>Sep 2014 – Jun 2018</span><span aria-hidden="true">·</span><span>4 yrs</span></span></div><div class="ent-sub"><span><strong>National Polytechnic University of Armenia</strong> <span style="color:var(--muted)">· Yerevan, Armenia</span></span><span class="ent-links"><a class="link" href="https://polytech.am/">Website ↗</a></span></div><span class="field">Field of study: Software for Automated Systems and Computers</span></article></div></section>
+<section class="rs-sec"><h2 class="label">Skills</h2><div><div class="skill"><span class="k">Programming Languages</span><span>C#, TypeScript, JavaScript</span></div><div class="skill"><span class="k">Game Engines / Frameworks</span><span>Unity, PixiJS, Phaser, Three.js</span></div><div class="skill"><span class="k">IDE</span><span>JetBrains, Visual Studio Code, Visual Studio</span></div><div class="skill"><span class="k">AI</span><span>ChatGPT, Claude, GitHub Copilot</span></div><div class="skill"><span class="k">Version Control</span><span>Git, GitHub</span></div><div class="skill"><span class="k">Operating Systems</span><span>Linux, macOS, Windows</span></div><div class="skill"><span class="k">Task Management</span><span>Notion, Obsidian, Miro, Trello, Asana, ClickUp</span></div><div class="skill"><span class="k">Familiar With</span><span>Godot, Unreal Engine, Blender, Xcode, Android Studio, Python, HTML, CSS, PHP, SQL, C++, C, CorelDRAW, Adobe Photoshop, Adobe Illustrator, Adobe Premiere Pro, Microsoft Office</span></div></div></section>
+<section class="rs-sec"><h2 class="label">Languages &amp; Soft Skills</h2><div class="soft"><div><strong>Language Skills</strong><span style="color:var(--muted)">Mother tongue:</span> Armenian<br><span style="color:var(--muted)">Other:</span> English, Russian</div><div><strong>Core Skills</strong><span style="color:var(--muted)">Friendly · Punctual · Organized · Fast Learner · Team Player · Responsible</span></div><div><strong>Work Ethic</strong><span style="color:var(--muted)">Hard-Working · Goal-Oriented · Motivation to Grow</span></div></div></section>
+<section class="rs-sec"><h2 class="label">Projects</h2><div><p style="font-size:15px;line-height:1.65;color:var(--muted)">Game Development and Programming projects spanning Coursework, Personal Work, and Professional Experience, including Gameplay Systems, Interactive Applications, and Software Architecture.</p><div class="plinks"><a href="https://davit-badalyan.github.io/">Website</a><a href="https://github.com/davit-badalyan">GitHub: davit-badalyan</a><a href="https://github.com/your-digital-research">Organization: Your Digital Research</a></div></div></section></main>
+<footer class="ftr"><div class="ftr-top"><span>Email: <a class="link" href="mailto:davit.badalyan.00@gmail.com">davit.badalyan.00@gmail.com</a></span>
+<span class="ftr-links"><a class="link" href="https://www.linkedin.com/in/d-badalyan/">LinkedIn</a><a class="link" href="https://github.com/davit-badalyan">GitHub</a><a class="link" href="https://x.com/d_badalyan">X</a></span></div>
+<div class="ftr-copy">© 2026 Davit Badalyan</div></footer></div></div></body></html>

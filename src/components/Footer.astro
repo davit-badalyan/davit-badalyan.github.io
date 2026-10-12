@@ -1,0 +1,99 @@
+---
+import { profile, socials } from '../data/site';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer" transition:persist="site-footer">
+  <div class="site-footer__top">
+    <span class="site-footer__email">
+      <span>Email:</span>
+      <a class="text-link site-footer__link" href={`mailto:${profile.email}`}>{profile.email}</a>
+    </span>
+    <ul class="site-footer__socials" aria-label="Social profiles">
+      {
+        socials.map(({ name, href }) => (
+          <li>
+            <a class="text-link site-footer__link" href={href}>
+              {name}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+  <p class="site-footer__copy">© {year} {profile.name}</p>
+</footer>
+
+<style>
+  /* Links are 44px tall (touch targets), so vertical padding is trimmed to keep the visual rhythm. */
+  .site-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 24px;
+    padding: 16px 0 28px;
+    border-top: 1px solid var(--line);
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .site-footer__top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0 24px;
+  }
+
+  .site-footer__email {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0 6px;
+  }
+
+  .site-footer__socials {
+    display: flex;
+    gap: 24px;
+  }
+
+  .site-footer__link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  .site-footer__copy {
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    font-size: 13px;
+    text-align: center;
+  }
+
+  /* Phones: everything centered and stacked. */
+  @media (max-width: 639.98px) {
+    .site-footer {
+      padding: 12px 0 24px;
+    }
+
+    .site-footer__top {
+      flex-direction: column;
+      justify-content: center;
+      gap: 0;
+      text-align: center;
+    }
+
+    .site-footer__email {
+      justify-content: center;
+    }
+
+    .site-footer__socials {
+      justify-content: center;
+    }
+
+    .site-footer__copy {
+      padding-top: 16px;
+    }
+  }
+</style>

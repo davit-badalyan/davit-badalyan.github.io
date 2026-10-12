@@ -1,0 +1,313 @@
+---
+import { companies, unlistedProjectsNote } from '../data/site';
+import { companyProjectsText, hasUnlisted } from '../utils/projects';
+import Icon from './Icon.astro';
+
+const defaultOpenId = 'playrix';
+---
+
+<div class="companies" data-accordion>
+  <div class="companies__columns" aria-hidden="true">
+    <span>Company</span>
+    <span>Role</span>
+    <span>Period</span>
+    <span>Duration</span>
+    <span>Projects</span>
+    <span></span>
+  </div>
+
+  {
+    companies.map((company) => {
+      const isOpen = company.id === defaultOpenId;
+      const panelId = `company-panel-${company.id}`;
+      const buttonId = `company-button-${company.id}`;
+      const countText = companyProjectsText(company);
+      return (
+        <div class="company">
+          <h3 class="company__heading">
+            <button
+              type="button"
+              id={buttonId}
+              class="company__toggle"
+              aria-expanded={isOpen ? 'true' : 'false'}
+              aria-controls={panelId}
+              aria-label={`${company.name}, ${company.role}, ${company.period}, ${company.duration}, ${countText}`}
+              data-accordion-toggle
+            >
+              <span class="company__info">
+                <span class="company__name">{company.name}</span>
+                <span class="company__role">{company.role}</span>
+                <span class="company__meta">
+                  <span class="company__period">{company.period}</span>{' '}
+                  <span class="company__duration">{company.duration}</span>{' '}
+                  <span class="company__count">{countText}</span>
+                </span>
+              </span>
+              <span class="company__chevron">
+                <Icon name="chevron" size={16} />
+              </span>
+            </button>
+          </h3>
+          <div id={panelId} class:list={['company__panel', { 'is-open': isOpen }]} role="region" aria-labelledby={buttonId}>
+            <div class="company__panel-inner">
+              <p class="company__about">{company.about}</p>
+              {hasUnlisted(company) && <p class="company__unlisted">{unlistedProjectsNote}</p>}
+              <p class="pending-note">Project videos and details are being added.</p>
+            </div>
+          </div>
+        </div>
+      );
+    })
+  }
+</div>
+
+<style>
+  .companies {
+    --columns: minmax(0, 1.5fr) minmax(0, 1.9fr) 168px 104px minmax(0, 0.9fr) 44px;
+  }
+
+  .companies__columns {
+    display: grid;
+    grid-template-columns: var(--columns);
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .company {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .company__heading {
+    font-size: inherit;
+    font-weight: inherit;
+  }
+
+  .company__toggle {
+    display: grid;
+    grid-template-columns: var(--columns);
+    gap: 16px;
+    align-items: center;
+    width: 100%;
+    min-height: 72px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    text-align: left;
+  }
+
+  .company__toggle:hover {
+    opacity: 1;
+  }
+
+  @media (hover: hover) {
+    .company__toggle:hover .company__name {
+      color: var(--accent);
+    }
+  }
+
+  /* Desktop: info spans flatten into the grid columns. */
+  .company__info,
+  .company__meta {
+    display: contents;
+  }
+
+  .company__name {
+    font-size: 19px;
+    font-weight: 500;
+    transition: color 200ms ease;
+  }
+
+  .company__role {
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .company__period,
+  .company__duration,
+  .company__count {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .company__chevron {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    flex: none;
+    justify-self: end;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    color: var(--text);
+    transition:
+      transform 360ms var(--ease-out),
+      color 200ms ease,
+      border-color 200ms ease;
+  }
+
+  .company__toggle[aria-expanded='true'] .company__chevron {
+    transform: rotate(180deg);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Open/close: the grid row animates 0fr ↔ 1fr and the inner wrapper clips the content.
+     A closed panel is also visibility: hidden (after the close animation), so its content
+     is out of the tab order and the accessibility tree. */
+  .company__panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    visibility: hidden;
+    transition:
+      grid-template-rows 360ms var(--ease-out),
+      visibility 0s linear 360ms;
+  }
+
+  .company__panel.is-open {
+    grid-template-rows: 1fr;
+    visibility: visible;
+    transition:
+      grid-template-rows 360ms var(--ease-out),
+      visibility 0s;
+  }
+
+  /* Spacing is margins on the children, not padding, so a closed panel is truly 0px tall. */
+  .company__panel-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .company__panel-inner > :first-child {
+    margin-top: 4px;
+  }
+
+  .company__panel-inner > :last-child {
+    margin-bottom: 28px;
+  }
+
+  .company__about {
+    font-size: 15px;
+    color: var(--muted);
+  }
+
+  .company__unlisted {
+    margin-top: -8px;
+    font-size: 14px;
+    color: var(--muted);
+    text-align: left;
+  }
+
+  /* Below 1024: each row stacks name, role, then one meta line. */
+  @media (max-width: 1023.98px) {
+    .companies__columns {
+      display: none;
+    }
+
+    .company__toggle {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      min-height: 0;
+      padding: 14px 0;
+    }
+
+    .company__info {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .company__meta {
+      display: block;
+    }
+
+    /* "{period} · {duration} · {count} projects"; each part stays on one line,
+       so lines only break between parts (the dot stays at the end of the line). */
+    .company__period,
+    .company__duration,
+    .company__count {
+      white-space: nowrap;
+    }
+
+    .company__period::after,
+    .company__duration::after {
+      content: ' ·';
+    }
+  }
+
+  @media (max-width: 639.98px) {
+    .company__name {
+      font-size: 17px;
+    }
+
+    .company__role {
+      font-size: 14px;
+    }
+
+    .company__period,
+    .company__duration,
+    .company__count {
+      font-size: 11px;
+    }
+
+    .company__panel-inner {
+      gap: 14px;
+    }
+
+    .company__panel-inner > :first-child {
+      margin-top: 0;
+    }
+
+    .company__panel-inner > :last-child {
+      margin-bottom: 24px;
+    }
+
+    .company__about {
+      font-size: 14px;
+    }
+  }
+</style>
+
+<script>
+  // Only one row open at a time; clicking the open row closes it.
+  // Native <button>s give Enter/Space keyboard support for free.
+  // Runs right away and after every client-side navigation; each accordion is wired once.
+  function initAccordions() {
+    document.querySelectorAll<HTMLElement>('[data-accordion]').forEach((accordion) => {
+      if (accordion.dataset.accordionReady !== undefined) return;
+      accordion.dataset.accordionReady = '';
+
+      const toggles = Array.from(accordion.querySelectorAll<HTMLButtonElement>('[data-accordion-toggle]'));
+
+      const setOpen = (toggle: HTMLButtonElement, open: boolean) => {
+        toggle.setAttribute('aria-expanded', String(open));
+        document.getElementById(toggle.getAttribute('aria-controls') ?? '')?.classList.toggle('is-open', open);
+      };
+
+      toggles.forEach((toggle) => {
+        toggle.addEventListener('click', () => {
+          const wasOpen = toggle.getAttribute('aria-expanded') === 'true';
+          toggles.forEach((other) => setOpen(other, false));
+          if (!wasOpen) setOpen(toggle, true);
+        });
+      });
+    });
+  }
+
+  initAccordions();
+  document.addEventListener('astro:page-load', initAccordions);
+</script>

@@ -1,0 +1,50 @@
+---
+// A resume section: label column + content (stacked on narrow screens).
+interface Props {
+  label: string;
+  id: string;
+  /** Position in the page-load entrance (see .enter in global.css); omit to not animate. */
+  enterIndex?: number;
+}
+
+const { label, id, enterIndex } = Astro.props;
+const enters = enterIndex !== undefined;
+---
+
+<section
+  class:list={['resume-section', { enter: enters }]}
+  style={enters ? `--i: ${enterIndex}` : undefined}
+  aria-labelledby={id}
+>
+  <h2 id={id} class="label">{label}</h2>
+  <div class="resume-section__content">
+    <slot />
+  </div>
+</section>
+
+<style>
+  .resume-section {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 40px;
+  }
+
+  .resume-section__content {
+    min-width: 0;
+  }
+
+  @media (max-width: 1279.98px) {
+    .resume-section {
+      grid-template-columns: 200px minmax(0, 1fr);
+      gap: 32px;
+    }
+  }
+
+  @media (max-width: 1023.98px) {
+    .resume-section {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+  }
+</style>

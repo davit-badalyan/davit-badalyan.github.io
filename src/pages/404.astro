@@ -1,0 +1,50 @@
+---
+import { profile } from '../data/site';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { withBase } from '../utils/paths';
+---
+
+<BaseLayout title={`Page not found — ${profile.name}`} description="The page you are looking for does not exist." noindex>
+  <div class="not-found">
+    <span class="label enter" style="--i: 0">Error 404</span>
+    <h1 class="page-title enter" style="--i: 1">Page not found</h1>
+    <p class="not-found__text enter" style="--i: 2">The page you are looking for does not exist.</p>
+    <div class="btn-row enter" style="--i: 3">
+      <a class="btn btn--primary" href={withBase('/')}>Back to home</a>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .not-found {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 88px 0 112px;
+  }
+
+  .not-found__text {
+    max-width: 580px;
+    font-size: 19px;
+    line-height: 1.6;
+    color: var(--muted);
+  }
+
+  .not-found .btn-row {
+    margin-top: 12px;
+  }
+
+  @media (max-width: 639.98px) {
+    .not-found {
+      padding: 32px 0 48px;
+    }
+
+    .not-found__text {
+      font-size: 16px;
+    }
+
+    .not-found .btn-row {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

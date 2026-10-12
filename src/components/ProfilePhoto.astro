@@ -1,0 +1,30 @@
+---
+import { profile } from '../data/site';
+import { withBase } from '../utils/paths';
+
+// WebP version sits next to the JPG with the same name (profile.jpg -> profile.webp).
+const webpPath = profile.photoPath.replace(/\.(jpe?g|png)$/i, '.webp');
+---
+
+<picture class="photo">
+  <source srcset={withBase(webpPath)} type="image/webp" />
+  <img class="photo__img" src={withBase(profile.photoPath)} alt="Portrait of Davit Badalyan" width="800" height="1000" />
+</picture>
+
+<style>
+  /* Sizing per breakpoint is set by the page that places the photo (see about.astro). */
+  .photo {
+    display: block;
+  }
+
+  .photo__img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-card-lg);
+    background: var(--media);
+    object-fit: cover;
+    object-position: 50% 25%;
+  }
+</style>

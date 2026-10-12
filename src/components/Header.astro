@@ -1,0 +1,237 @@
+---
+import { profile } from '../data/site';
+import { withBase } from '../utils/paths';
+import ThemeToggle from './ThemeToggle.astro';
+
+const navItems = [
+  { label: 'Work', href: withBase('/') },
+  { label: 'About', href: withBase('about/') },
+  { label: 'Resume', href: withBase('resume/') },
+  { label: 'Contact', href: withBase('contact/') },
+];
+
+const stripSlash = (path: string) => path.replace(/\/+$/, '');
+const currentPath = stripSlash(Astro.url.pathname);
+---
+
+<header class="site-header" transition:persist="site-header">
+  <a class="brand" href={withBase('/')}>
+    <img class="brand__avatar" src={withBase(profile.avatarPath)} alt="" width="40" height="40" />
+    <span class="brand__text">
+      <span class="brand__name">{profile.name}</span>
+      <span class="brand__location"><span class="brand__dot" aria-hidden="true"></span>{profile.location}</span>
+    </span>
+  </a>
+
+  <nav class="site-nav" aria-label="Main" data-site-nav>
+    {
+      navItems.map(({ label, href }) => {
+        const isActive = stripSlash(href) === currentPath;
+        return (
+          <a href={href} class:list={['site-nav__link', { 'is-active': isActive }]} aria-current={isActive ? 'page' : undefined}>
+            {label}
+          </a>
+        );
+      })
+    }
+    <span class="site-nav__indicator" aria-hidden="true" data-nav-indicator></span>
+  </nav>
+
+  <ThemeToggle />
+</header>
+
+<style>
+  .site-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: 'brand nav toggle';
+    align-items: center;
+    column-gap: 24px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .brand {
+    display: flex;
+    grid-area: brand;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    min-height: 44px;
+    justify-self: start;
+  }
+
+  .brand__avatar {
+    width: 40px;
+    height: 40px;
+    flex: none;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  .brand__text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.2;
+  }
+
+  .brand__name {
+    font-size: 17px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .brand__location {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 3px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .brand__dot {
+    width: 7px;
+    height: 7px;
+    flex: none;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .site-nav {
+    position: relative;
+    display: flex;
+    grid-area: nav;
+    gap: 26px;
+    font-size: 15px;
+  }
+
+  .site-nav__link {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    border-bottom: 2px solid transparent;
+    color: var(--muted);
+    transition:
+      opacity 0.15s ease,
+      color 200ms ease;
+  }
+
+  /* Without JavaScript the active link keeps its own underline; with it, one indicator
+     slides between links instead. */
+  .site-nav__link.is-active {
+    border-bottom-color: var(--accent);
+    color: var(--text);
+  }
+
+  .site-nav.has-indicator .site-nav__link.is-active {
+    border-bottom-color: transparent;
+  }
+
+  .site-nav__indicator {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    display: none;
+    width: 0;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--accent);
+    transition:
+      transform 420ms var(--ease-out),
+      width 420ms var(--ease-out);
+  }
+
+  .site-nav.has-indicator .site-nav__indicator {
+    display: block;
+  }
+
+  .site-nav__indicator.is-instant {
+    transition: none;
+  }
+
+  .site-header :global(.theme-toggle) {
+    grid-area: toggle;
+  }
+
+  @media (max-width: 1023.98px) {
+    .site-nav {
+      gap: 20px;
+    }
+  }
+
+  /* Phones: brand + toggle on the first row, nav spread across a second row. */
+  @media (max-width: 639.98px) {
+    .site-header {
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas:
+        'brand toggle'
+        'nav nav';
+      row-gap: 6px;
+      padding: 10px 0 0;
+    }
+
+    .brand__avatar {
+      width: 36px;
+      height: 36px;
+    }
+
+    .brand__name {
+      font-size: 16px;
+    }
+
+    .site-nav {
+      justify-content: space-between;
+      gap: 0;
+    }
+  }
+</style>
+
+<script>
+  // The header is persisted across page transitions, so its active link is updated here
+  // (the server-rendered state is only correct for the first page).
+  const stripSlash = (path: string) => path.replace(/\/+$/, '');
+
+  function syncActiveLink() {
+    const here = stripSlash(location.pathname);
+    document.querySelectorAll<HTMLAnchorElement>('[data-site-nav] .site-nav__link').forEach((link) => {
+      const isActive = stripSlash(new URL(link.href).pathname) === here;
+      link.classList.toggle('is-active', isActive);
+      if (isActive) link.setAttribute('aria-current', 'page');
+      else link.removeAttribute('aria-current');
+    });
+  }
+
+  /** Moves the indicator under the active link: animated on navigation, instant otherwise. */
+  function placeIndicator(instant: boolean) {
+    const nav = document.querySelector<HTMLElement>('[data-site-nav]');
+    const indicator = nav?.querySelector<HTMLElement>('[data-nav-indicator]');
+    if (!nav || !indicator) return;
+    nav.classList.add('has-indicator');
+
+    const active = nav.querySelector<HTMLElement>('.site-nav__link.is-active');
+    if (instant) indicator.classList.add('is-instant');
+    if (active) {
+      indicator.style.width = `${active.offsetWidth}px`;
+      indicator.style.transform = `translateX(${active.offsetLeft}px)`;
+    } else {
+      indicator.style.width = '0px';
+    }
+    if (instant) {
+      void indicator.offsetWidth; // commit the position before transitions come back
+      indicator.classList.remove('is-instant');
+    }
+  }
+
+  placeIndicator(true);
+  document.fonts?.ready.then(() => placeIndicator(true));
+  window.addEventListener('resize', () => placeIndicator(true));
+  document.addEventListener('astro:after-swap', () => {
+    syncActiveLink();
+    placeIndicator(false);
+  });
+</script>

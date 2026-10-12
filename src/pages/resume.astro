@@ -1,0 +1,346 @@
+---
+import Icon from '../components/Icon.astro';
+import ResumeSection from '../components/ResumeSection.astro';
+import { about, education, experience, languages, profile, projectsSummary, skills, softSkills } from '../data/site';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { withBase } from '../utils/paths';
+
+---
+
+<BaseLayout title={`Resume — ${profile.name}`}>
+  <div class="resume">
+    <div class="resume__head enter" style="--i: 0">
+      <div class="resume__heading">
+        <h1 class="page-title">Resume</h1>
+        <p class="resume__subtitle">{profile.title}</p>
+      </div>
+      <a class="btn btn--primary resume__download" href={withBase(profile.cvPath)} download>
+        <Icon name="download" />
+        Download CV (PDF)
+      </a>
+    </div>
+
+    <ResumeSection label="About Me" id="resume-about" enterIndex={1}>
+      <p class="resume__about">{about}</p>
+    </ResumeSection>
+
+    <ResumeSection label="Work Experience" id="resume-experience" enterIndex={2}>
+      {
+        experience.map((job) => (
+          <article class="entry">
+            <div class="entry__row">
+              <h3 class="entry__title">{job.role}</h3>
+              <span class="entry__dates">
+                <span>{job.dates}</span>
+                <span aria-hidden="true">·</span>
+                <span>{job.duration}</span>
+              </span>
+            </div>
+            <div class="entry__row entry__row--sub">
+              <span>
+                <strong>{job.company}</strong> <span class="muted">· {job.location}</span>
+              </span>
+              <span class="entry__links">
+                {job.links.map((link) => (
+                  <a class="text-link" href={link.href}>
+                    {link.label} ↗
+                  </a>
+                ))}
+              </span>
+            </div>
+            <p class="entry__text">{job.description}</p>
+          </article>
+        ))
+      }
+    </ResumeSection>
+
+    <ResumeSection label="Education and Training" id="resume-education" enterIndex={3}>
+      {
+        education.map((item) => (
+          <article class="entry entry--edu">
+            <div class="entry__row">
+              <h3 class="entry__title">{item.title}</h3>
+              <span class="entry__dates">
+                <span>{item.dates}</span>
+                <span aria-hidden="true">·</span>
+                <span>{item.duration}</span>
+              </span>
+            </div>
+            <div class="entry__row entry__row--sub">
+              <span>
+                <strong>{item.school}</strong> <span class="muted">· {item.location}</span>
+              </span>
+              <span class="entry__links">
+                <a class="text-link" href={item.website}>
+                  Website ↗
+                </a>
+              </span>
+            </div>
+            <span class="entry__field">Field of study: {item.field}</span>
+          </article>
+        ))
+      }
+    </ResumeSection>
+
+    <ResumeSection label="Skills" id="resume-skills" enterIndex={4}>
+      <dl class="skills">
+        {
+          skills.map((group) => (
+            <div class="skills__row">
+              <dt class="skills__label">{group.label}</dt>
+              <dd class="skills__items">{group.items.join(', ')}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </ResumeSection>
+
+    <ResumeSection label="Languages & Soft Skills" id="resume-soft" enterIndex={5}>
+      <div class="soft">
+        <div class="soft__col">
+          <h3 class="soft__title">Language skills</h3>
+          <span><span class="muted">Mother tongue:</span> {languages.native}</span>
+          <span><span class="muted">Other:</span> {languages.other.join(', ')}</span>
+        </div>
+        <div class="soft__col">
+          <h3 class="soft__title">Core Skills</h3>
+          <span class="muted">{softSkills.core.join(' · ')}</span>
+        </div>
+        <div class="soft__col">
+          <h3 class="soft__title">Work Ethic</h3>
+          <span class="muted">{softSkills.workEthic.join(' · ')}</span>
+        </div>
+      </div>
+    </ResumeSection>
+
+    <ResumeSection label="Projects" id="resume-projects">
+      <div class="projects">
+        <p class="entry__text">{projectsSummary.text}</p>
+        <ul class="pill-list">
+          {
+            projectsSummary.links.map((link) => (
+              <li>
+                <a class="link-pill" href={link.href}>
+                  {link.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </ResumeSection>
+  </div>
+</BaseLayout>
+
+<style>
+  .resume {
+    display: flex;
+    flex-direction: column;
+    gap: 64px;
+    padding: 72px 0 96px;
+  }
+
+  .resume__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--text);
+  }
+
+  .resume__heading {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .resume__subtitle {
+    font-size: 16px;
+    color: var(--muted);
+  }
+
+  .resume__about {
+    font-size: 17px;
+    line-height: 1.65;
+  }
+
+  /* ---------- Experience / education entries ---------- */
+  .entry {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .entry--edu {
+    gap: 6px;
+    padding: 18px 0;
+  }
+
+  .entry__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+  }
+
+  .entry__row--sub {
+    font-size: 15px;
+  }
+
+  .entry__row--sub strong {
+    font-weight: 600;
+  }
+
+  .entry__title {
+    font-size: 19px;
+  }
+
+  .entry--edu .entry__title {
+    font-size: 18px;
+  }
+
+  /* period | · | duration in fixed character columns, so dates align across entries. */
+  .entry__dates {
+    display: inline-grid;
+    grid-template-columns: 19ch 1ch 11ch;
+    column-gap: 0.7ch;
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .entry__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  .entry__text {
+    margin-top: 4px;
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--muted);
+  }
+
+  .entry__field {
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  /* ---------- Skills ---------- */
+  .skills {
+    border-top: 1px solid var(--line);
+  }
+
+  .skills__row {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .skills__label {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .skills__items {
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  /* ---------- Languages & soft skills ---------- */
+  .soft {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  .soft__col {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .soft__title {
+    margin-bottom: 4px;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  /* ---------- Projects ---------- */
+  .projects {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .projects .entry__text {
+    margin-top: 0;
+  }
+
+  .link-pill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-pill);
+    font-size: 14px;
+    color: var(--accent);
+  }
+
+  @media (max-width: 1023.98px) {
+    .resume {
+      gap: 48px;
+      padding: 48px 0 72px;
+    }
+  }
+
+  /* < 640: title/dates and company/links stack. */
+  @media (max-width: 639.98px) {
+    .entry__row {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .entry__dates {
+      margin-left: 0;
+    }
+
+    .entry__links {
+      margin-top: 2px;
+    }
+
+    .resume {
+      gap: 40px;
+      padding: 32px 0 48px;
+    }
+
+    .resume__download {
+      width: 100%;
+    }
+
+    .skills__row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .soft {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

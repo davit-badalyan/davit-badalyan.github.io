@@ -1,0 +1,129 @@
+---
+import '@fontsource-variable/instrument-sans';
+import '@fontsource-variable/jetbrains-mono';
+import '../styles/global.css';
+import { ClientRouter } from 'astro:transitions';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { profile } from '../data/site';
+import { withBase } from '../utils/paths';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** Social preview image, as a path relative to public/. Defaults to og-image.jpg (1200×630). */
+  image?: string;
+  /** Alt text for the social preview image. */
+  imageAlt?: string;
+  /** Exclude this page from search engines (e.g. the 404 page). */
+  noindex?: boolean;
+}
+
+const DEFAULT_OG_IMAGE = {
+  path: 'og-image.jpg',
+  width: 1200,
+  height: 630,
+  type: 'image/jpeg',
+  alt: `${profile.name} — ${profile.title}: ${profile.heroHeadline}`,
+};
+
+const {
+  title = `${profile.name} — ${profile.title}`,
+  description = profile.metaDescription,
+  image = DEFAULT_OG_IMAGE.path,
+  imageAlt = DEFAULT_OG_IMAGE.alt,
+  noindex = false,
+} = Astro.props;
+
+// Astro.url.pathname already includes the base path, so combining it with
+// `site` yields the full public URL of the current page.
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+// Social images need absolute URLs: `site` + base path (follows `base` automatically).
+const imageURL = new URL(withBase(image), Astro.site).href;
+// Dimensions and type are only known for the default image.
+const isDefaultImage = image === DEFAULT_OG_IMAGE.path;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Apply the saved or system theme before first paint (no flash). -->
+    <script is:inline>
+      (function () {
+        var theme = null;
+        try {
+          theme = localStorage.getItem('theme');
+        } catch (e) {}
+        if (theme !== 'light' && theme !== 'dark') {
+          theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonicalURL} />}
+
+    <link rel="icon" href={withBase('favicon.ico')} sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href={withBase('favicon-32.png')} />
+    <link rel="icon" type="image/png" sizes="16x16" href={withBase('favicon-16.png')} />
+    <link rel="apple-touch-icon" href={withBase('apple-touch-icon.png')} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={profile.name} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:image" content={imageURL} />
+    {
+      isDefaultImage && (
+        <>
+          <meta property="og:image:width" content={String(DEFAULT_OG_IMAGE.width)} />
+          <meta property="og:image:height" content={String(DEFAULT_OG_IMAGE.height)} />
+          <meta property="og:image:type" content={DEFAULT_OG_IMAGE.type} />
+        </>
+      )
+    }
+    <meta property="og:image:alt" content={imageAlt} />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={imageURL} />
+    <meta name="twitter:image:alt" content={imageAlt} />
+
+    <!-- Page transitions: header and footer persist, only <main> animates (see global.css).
+         Browsers without View Transitions just swap the page. -->
+    <ClientRouter fallback="swap" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <div class="container">
+      <Header />
+      <main id="main" data-entrance="first">
+        <slot />
+      </main>
+      <Footer />
+    </div>
+  </body>
+</html>
+
+<script>
+  // Runs once per visit; Astro keeps it alive across client-side navigations.
+  document.addEventListener('astro:before-swap', (event) => {
+    const incoming = event.newDocument.documentElement;
+    // Keep the current theme on the incoming page, so the swap never flashes the other theme.
+    const theme = document.documentElement.dataset.theme;
+    if (theme) incoming.dataset.theme = theme;
+    // The orchestrated entrance only plays on a real page load; after a navigation the
+    // page transition (and, on Home, the hero cards) take over.
+    incoming.querySelector('main')?.setAttribute('data-entrance', 'nav');
+  });
+</script>

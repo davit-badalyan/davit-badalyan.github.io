@@ -1,0 +1,273 @@
+---
+import ProfilePhoto from '../components/ProfilePhoto.astro';
+import { about, aboutFacts, enginesFrameworks, focusAreas, profile, programmingLanguages } from '../data/site';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { withBase } from '../utils/paths';
+---
+
+<BaseLayout title={`About — ${profile.name}`} description={about}>
+  <div class="about">
+    <div class="about__photo enter" style="--i: 0">
+      <ProfilePhoto />
+    </div>
+
+    <dl class="card facts enter" style="--i: 3">
+      {
+        aboutFacts.map(({ label, value }) => (
+          <div class="facts__row">
+            <dt class="facts__label">{label}</dt>
+            <dd class="facts__value">{value}</dd>
+          </div>
+        ))
+      }
+    </dl>
+
+    <div class="about__intro">
+      <h1 class="page-title enter" style="--i: 1">About Me</h1>
+      <p class="about__text enter" style="--i: 2">{about}</p>
+    </div>
+
+    <div class="card groups enter" style="--i: 4">
+      <section class="group" aria-labelledby="focus-title">
+        <h2 id="focus-title" class="label">Focus Areas</h2>
+        <ul class="pill-list">
+          {focusAreas.map((item) => <li class="chip">{item}</li>)}
+        </ul>
+      </section>
+
+      <section class="group" aria-labelledby="languages-title">
+        <h2 id="languages-title" class="label">Programming Languages</h2>
+        <ul class="pill-list">
+          {programmingLanguages.map((item) => <li class="chip">{item}</li>)}
+        </ul>
+      </section>
+
+      <section class="group" aria-labelledby="engines-title">
+        <h2 id="engines-title" class="label">Engines &amp; Frameworks</h2>
+        <ul class="pill-list">
+          {enginesFrameworks.map((item) => <li class="chip">{item}</li>)}
+        </ul>
+      </section>
+    </div>
+
+    <div class="btn-row about__actions">
+      <a class="btn btn--primary" href={withBase('resume/')}>Resume</a>
+      <a class="btn btn--secondary" href={withBase('contact/')}>Contact</a>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  /* ≥1280: photo beside the intro; facts and groups cards share one row (equal height). */
+  .about {
+    display: grid;
+    grid-template-columns: 352px minmax(0, 1fr);
+    grid-template-areas:
+      'photo intro'
+      'facts groups'
+      '. actions';
+    gap: 24px 36px;
+    padding: 72px 0 88px;
+  }
+
+  /* The photo fills its cell, so its bottom lines up with the end of the intro text. */
+  .about__photo {
+    position: relative;
+    grid-area: photo;
+    min-height: 440px;
+  }
+
+  .about__photo :global(.photo) {
+    position: absolute;
+    inset: 0;
+  }
+
+  /* ---------- Facts card ---------- */
+  .facts {
+    display: flex;
+    grid-area: facts;
+    flex-direction: column;
+    padding: 2px 18px;
+    container: facts / inline-size;
+  }
+
+  /* Rows share the card height equally; label and value stay on one baseline,
+     and the line is centered vertically inside its row. */
+  .facts__row {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-content: center;
+    align-items: baseline;
+    gap: 0 16px;
+    padding: 12px 0;
+    font-size: 14px;
+  }
+
+  .facts__row + .facts__row {
+    border-top: 1px solid var(--line);
+  }
+
+  .facts__label {
+    flex: none;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .facts__value {
+    margin-left: auto;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  /* Narrow facts card (e.g. 1024–1279, or larger browser fonts): shrink the text
+     so values never wrap or leave the card on ≥640px. */
+  @container facts (max-width: 330px) {
+    .facts__value {
+      font-size: 13px;
+    }
+
+    .facts__label {
+      font-size: 11px;
+    }
+  }
+
+  @container facts (max-width: 300px) {
+    .facts__row {
+      column-gap: 10px;
+    }
+
+    .facts__value {
+      font-size: 12px;
+    }
+
+    .facts__label {
+      font-size: 10.5px;
+    }
+  }
+
+  /* Very narrow card (~640–700px viewports, or zoomed): label above value, so the
+     value still fits on one line inside the card. */
+  @container facts (max-width: 250px) {
+    .facts__row {
+      flex-direction: column;
+      flex-wrap: nowrap;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 2px;
+    }
+
+    .facts__value {
+      margin-left: 0;
+      text-align: left;
+    }
+  }
+
+  /* ---------- Intro ---------- */
+  .about__intro {
+    display: flex;
+    grid-area: intro;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .about__text {
+    font-size: 20px;
+    line-height: 1.6;
+  }
+
+  /* ---------- Groups card ---------- */
+  .groups {
+    display: flex;
+    grid-area: groups;
+    flex-direction: column;
+    padding: 4px 18px;
+  }
+
+  .group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px 0;
+  }
+
+  .group + .group {
+    border-top: 1px solid var(--line);
+  }
+
+  .about__actions {
+    grid-area: actions;
+    justify-content: flex-end;
+  }
+
+  /* 1024–1279 */
+  @media (max-width: 1279.98px) {
+    .about {
+      grid-template-columns: 344px minmax(0, 1fr);
+    }
+
+    .about__text {
+      font-size: 18px;
+    }
+  }
+
+  /* 640–1023: photo and facts side by side, everything else full width. */
+  @media (max-width: 1023.98px) {
+    .about {
+      grid-template-columns: 260px minmax(0, 1fr);
+      grid-template-areas:
+        'photo facts'
+        'intro intro'
+        'groups groups'
+        'actions actions';
+      padding: 48px 0 64px;
+    }
+
+    .about__photo {
+      position: static;
+      min-height: 0;
+    }
+
+    .about__photo :global(.photo) {
+      position: static;
+    }
+
+    .about__photo :global(.photo__img) {
+      height: auto;
+      aspect-ratio: 4 / 5;
+    }
+  }
+
+  /* < 640: single column, large rectangular photo. */
+  @media (max-width: 639.98px) {
+    .about {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas:
+        'photo'
+        'facts'
+        'intro'
+        'groups'
+        'actions';
+      row-gap: 20px;
+      padding: 24px 0 48px;
+    }
+
+    .about__photo :global(.photo__img) {
+      max-height: 480px;
+    }
+
+    .facts__value {
+      white-space: normal;
+    }
+
+    .about__text {
+      font-size: 17px;
+    }
+
+    .groups {
+      padding: 2px 16px;
+    }
+  }
+</style>

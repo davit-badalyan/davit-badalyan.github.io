@@ -1,0 +1,462 @@
+---
+// The three hero cards: label + number (the accessible content), plus a decorative
+// mini infographic above them on ≥1024px. Everything is computed from site.ts.
+import { companies, heroStats, personalProjects } from '../data/site';
+import { companyCountText, formatCount, parseYearMonth } from '../utils/projects';
+
+/* ---------- Card 1: projects bar + legend ---------- */
+const TONES = [100, 72, 48, 30, 18];
+const shortName = (name: string) => name.replace(/ (LLC|Games)$/, '');
+
+const projectSegments = [
+  ...companies.map((company) => ({
+    name: shortName(company.name),
+    count: company.projectCount,
+    countText: companyCountText(company),
+  })),
+  { name: 'Personal', count: personalProjects.projectCount, countText: formatCount(personalProjects.projectCount) },
+]
+  .sort((a, b) => b.count - a.count)
+  .map((segment, index) => ({ ...segment, tone: TONES[Math.min(index, TONES.length - 1)] }));
+
+/* ---------- Card 2: studios, newest first ---------- */
+const studios = [...companies]
+  .sort((a, b) => b.start.localeCompare(a.start))
+  .map((company) => {
+    const start = parseYearMonth(company.start).year;
+    const end = parseYearMonth(company.end).year;
+    return { name: company.name, years: start === end ? `${start}` : `${start}–${String(end).slice(-2)}` };
+  });
+
+/* ---------- Card 3: vertical timeline ---------- */
+// Months are counted from January of the earliest start year; the axis ends at the latest end month.
+const firstYear = Math.min(...companies.map((company) => parseYearMonth(company.start).year));
+const monthIndex = (value: string) => {
+  const { year, month } = parseYearMonth(value);
+  return (year - firstYear) * 12 + (month - 1);
+};
+const totalMonths = Math.max(...companies.map((company) => monthIndex(company.end)));
+const percent = (months: number) => `${((months / totalMonths) * 100).toFixed(2)}%`;
+
+const lastYear = firstYear + Math.floor(totalMonths / 12);
+const ticks = Array.from({ length: lastYear - firstYear + 1 }, (_, i) => ({
+  year: firstYear + i,
+  top: percent(i * 12),
+}));
+const segments = companies.map((company) => ({
+  top: percent(monthIndex(company.start)),
+  height: percent(monthIndex(company.end) - monthIndex(company.start)),
+}));
+
+const vizFor = (label: string) => label.toLowerCase();
+---
+
+{/* TODO (next phase): these three cards will show the featured-project video loops. */}
+{/* Entrance timing (--i indexes, delays) lives in the styles below; the count-up in the script. */}
+<dl class="stats">
+  {
+    heroStats.map(({ label, value }, cardIndex) => (
+      <div class="card stat" style={`--i: ${cardIndex}`}>
+        <dt class="label stat__label">{label}</dt>
+        <dd class="stat__value">
+          {/* Screen readers get the final value only; the visible number counts up. */}
+          <span class="visually-hidden">{value}</span>
+          <span aria-hidden="true" data-count-up>{value}</span>
+        </dd>
+
+        {vizFor(label) === 'projects' && (
+          <dd class="viz" aria-hidden="true">
+            <span class="bar">
+              {projectSegments.map((segment, i) => (
+                <span class="bar__segment" style={`--grow: ${segment.count}; --tone: ${segment.tone}%; --i: ${i}`} />
+              ))}
+            </span>
+            <span class="legend">
+              {projectSegments.map((segment, i) => (
+                <span class="legend__row" style={`--tone: ${segment.tone}%; --i: ${i}`}>
+                  <span class="legend__swatch" />
+                  <span class="legend__count">{segment.countText}</span>
+                  {segment.name}
+                </span>
+              ))}
+            </span>
+          </dd>
+        )}
+
+        {vizFor(label) === 'studios' && (
+          <dd class="viz" aria-hidden="true">
+            <span class="studios">
+              {studios.map((studio, i) => (
+                <span class="studios__item" style={`--i: ${i}`}>
+                  <span>{studio.name}</span>
+                  <span class="studios__years">{studio.years}</span>
+                </span>
+              ))}
+            </span>
+          </dd>
+        )}
+
+        {vizFor(label) === 'since' && (
+          <dd class="viz" aria-hidden="true">
+            <span class="timeline">
+              {ticks.map((tick, i) => (
+                <span class="timeline__tick" style={`top: ${tick.top}; --i: ${i}`}>
+                  {tick.year}
+                </span>
+              ))}
+              <span class="timeline__axis" />
+              {segments.map((segment, i) => (
+                <span class="timeline__segment" style={`top: ${segment.top}; height: ${segment.height}; --i: ${i}`} />
+              ))}
+            </span>
+          </dd>
+        )}
+      </div>
+    ))
+  }
+</dl>
+
+<style>
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  /* Label + number sit at the bottom; the visual (order: -1) fills the space above. */
+  .stat {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 6px;
+    min-width: 0;
+    aspect-ratio: 9 / 16;
+    padding: 18px;
+    border-radius: var(--radius-card-lg);
+  }
+
+  .stat:nth-child(2) {
+    margin-top: 44px;
+  }
+
+  .stat {
+    transition:
+      transform 260ms var(--ease-out),
+      border-color 200ms ease;
+  }
+
+  @media (hover: hover) {
+    .stat:hover {
+      transform: translateY(-4px);
+      border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+    }
+  }
+
+  .stat__value {
+    font-size: 40px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+
+  /* ---------- Visual container ---------- */
+  .viz {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: flex-start;
+    order: -1;
+    min-height: 0;
+    margin-bottom: 10px;
+    /* Its size comes from the card (flex: 1), so it can be a size container:
+       the rules at the end tighten the content when the visual area is small. */
+    container: viz / size;
+  }
+
+  /* ---------- Projects bar ---------- */
+  .bar {
+    display: flex;
+    gap: 2px;
+    height: 10px;
+    overflow: hidden;
+    border-radius: var(--radius-pill);
+  }
+
+  .bar__segment {
+    flex: var(--grow) 1 0;
+    min-width: 3px;
+    background: color-mix(in srgb, var(--accent) var(--tone), transparent);
+  }
+
+  .legend {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-top: 14px;
+  }
+
+  .legend__row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .legend__swatch {
+    width: 8px;
+    height: 8px;
+    flex: none;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--accent) var(--tone), transparent);
+  }
+
+  .legend__count {
+    min-width: 3ch;
+    font-weight: 500;
+    color: var(--text);
+    text-align: right;
+  }
+
+  /* ---------- Studios list ---------- */
+  /* The rows share the available height equally, so the list always fits the card
+     (fixed 7px paddings overflow on shorter cards, e.g. at 1024px). */
+  .studios {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .studios__item {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1px;
+    min-height: 0;
+    font-size: clamp(10px, 10.4cqi, 12.5px);
+    line-height: 1.2;
+  }
+
+  .studios__item + .studios__item {
+    border-top: 1px solid var(--line);
+  }
+
+  /* One line per name. The font size (above) scales with the visual's width (cqi) and is
+     capped at 12.5px / 12px, so the longest name ("ArmNomads Games", ~9.3× its font size)
+     fits even at 1024px; the ellipsis is only a safety net. */
+  .studios__item > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .studios__years {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--muted);
+  }
+
+  /* ---------- Timeline ---------- */
+  .timeline {
+    position: relative;
+    display: block;
+    flex: 1;
+    margin: 6px 0 4px;
+  }
+
+  .timeline__axis {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 44px;
+    width: 1px;
+    background: var(--line);
+  }
+
+  .timeline__segment {
+    position: absolute;
+    left: 40px;
+    width: 9px;
+    border-radius: var(--radius-pill);
+    background: var(--accent);
+  }
+
+  .timeline__tick {
+    position: absolute;
+    left: 0;
+    transform: translateY(-50%);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    line-height: 1;
+    color: var(--muted);
+  }
+
+  /* 1024–1279 */
+  @media (max-width: 1279.98px) {
+    .stat {
+      padding: 14px;
+    }
+
+    .legend__row {
+      gap: 6px;
+      font-size: 10px;
+    }
+
+    .studios__item {
+      font-size: clamp(10px, 10.4cqi, 12px);
+    }
+  }
+
+  /* < 1024: compact row of label + number, no visuals. */
+  @media (max-width: 1023.98px) {
+    .stats {
+      gap: 10px;
+    }
+
+    .stat {
+      gap: 4px;
+      aspect-ratio: auto;
+      padding: 14px 16px;
+    }
+
+    .stat:nth-child(2) {
+      margin-top: 0;
+    }
+
+    .viz {
+      display: none;
+    }
+
+    .stat__value {
+      font-size: 28px;
+    }
+  }
+
+  /* < 640 */
+  @media (max-width: 639.98px) {
+    .stat {
+      padding: 12px;
+    }
+
+    .stat__label {
+      font-size: 10px;
+    }
+
+    .stat__value {
+      font-size: 24px;
+    }
+  }
+
+  /* ---------- Entrance ----------
+     Page load: the cards rise after the hero text (360ms, 120ms apart), then the
+     infographics play from 720ms. Navigating to Home: only the cards rise (120ms, 90ms
+     apart) and the infographics start at 420ms. "backwards" fill: the hover lift still works. */
+  .stats {
+    --card-start: 360ms;
+    --card-step: 120ms;
+    --viz-start: 720ms;
+  }
+
+  :global(main[data-entrance='nav']) .stats {
+    --card-start: 120ms;
+    --card-step: 90ms;
+    --viz-start: 420ms;
+  }
+
+  .stat {
+    animation: rise 720ms var(--ease-out) backwards;
+    animation-delay: calc(var(--card-start) + var(--i) * var(--card-step));
+  }
+
+  .bar__segment {
+    transform-origin: left center;
+    animation: grow-x 700ms var(--ease-out) backwards;
+    animation-delay: calc(var(--viz-start) + var(--i) * 70ms);
+  }
+
+  .legend__row {
+    animation: fade 500ms ease backwards;
+    animation-delay: calc(var(--viz-start) + 120ms + var(--i) * 60ms);
+  }
+
+  .studios__item {
+    animation: fade 500ms ease backwards;
+    animation-delay: calc(var(--viz-start) + 60ms + var(--i) * 80ms);
+  }
+
+  .timeline__tick {
+    animation: fade 500ms ease backwards;
+    animation-delay: calc(var(--viz-start) + var(--i) * 50ms);
+  }
+
+  .timeline__segment {
+    transform-origin: top center;
+    animation: grow-y 600ms var(--ease-out) backwards;
+    animation-delay: calc(var(--viz-start) + 80ms + var(--i) * 140ms);
+  }
+
+  /* Container rules last, so they win over the viewport media rules above. */
+  /* Short visual area (cards at ~1024–1100px viewports): tighter legend. */
+  @container viz (max-height: 130px) {
+    .legend {
+      gap: 4px;
+      margin-top: 10px;
+    }
+  }
+</style>
+
+<script>
+  // Count-up for the hero numbers. The number starts counting at the same moment its card
+  // starts to rise (the card is still invisible before that, so the start value is never
+  // seen sitting still) and ends on the exact text from site.ts.
+  // Start value: target − 20 for years (≥ 1000), otherwise 0; any suffix ("+") is kept.
+  const DURATION = 1000;
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  function countUp(element: HTMLElement) {
+    if (element.dataset.countUpDone !== undefined) return;
+    element.dataset.countUpDone = '';
+
+    const finalText = element.textContent ?? '';
+    const match = finalText.match(/^(\d+)(.*)$/);
+    if (!match || reducedMotion.matches) return;
+
+    // Time left until the card's rise begins. If it has already begun (script ran late),
+    // leave the final value alone rather than resetting a visible number.
+    const card = element.closest<HTMLElement>('.stat');
+    const rise = card?.getAnimations().find((animation) => animation instanceof CSSAnimation && animation.animationName === 'rise');
+    if (!rise) return;
+    const delay = parseFloat(getComputedStyle(card!).animationDelay) * 1000;
+    const remaining = delay - Number(rise.currentTime ?? 0);
+    if (remaining <= 0) return;
+
+    const to = Number(match[1]);
+    const suffix = match[2];
+    const from = to >= 1000 ? to - 20 : 0;
+    element.textContent = `${from}${suffix}`;
+
+    // Timed on the card animation's own clock (the document timeline), so the count stays
+    // in sync with the rise even if the page starts hidden (background tab).
+    const tick = () => {
+      const now = Number(document.timeline.currentTime ?? 0);
+      const startAt = rise.startTime === null ? now + remaining : Number(rise.startTime) + delay;
+      const progress = Math.min(1, Math.max(0, (now - startAt) / DURATION));
+      const eased = 1 - Math.pow(1 - progress, 3);
+      element.textContent = progress < 1 ? `${Math.round(from + (to - from) * eased)}${suffix}` : finalText;
+      if (progress < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+
+  const run = () => document.querySelectorAll<HTMLElement>('[data-count-up]').forEach(countUp);
+
+  run();
+  // After a navigation to Home: right after the swap (before the cards start rising),
+  // with page-load as a fallback. Each number counts at most once per page view.
+  document.addEventListener('astro:after-swap', run);
+  document.addEventListener('astro:page-load', run);
+</script>
