@@ -1,0 +1,38 @@
+---
+// Company / school logo from public/images/logos/<slug>.png (128px source). Decorative.
+import { withBase } from '../utils/paths';
+
+interface Props {
+  slug: string;
+  size?: number;
+  class?: string;
+}
+
+const { slug, size = 28, class: className } = Astro.props;
+---
+
+<img
+  class:list={['logo', { 'logo--sm': size <= 28 }, className]}
+  src={withBase(`images/logos/${slug}.png`)}
+  width={size}
+  height={size}
+  loading="lazy"
+  decoding="async"
+  draggable="false"
+  alt=""
+/>
+
+<style>
+  .logo {
+    display: block;
+    flex: none;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: #fff;
+    object-fit: cover;
+  }
+
+  .logo--sm {
+    border-radius: 6px;
+  }
+</style>

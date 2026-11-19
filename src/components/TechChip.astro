@@ -1,0 +1,29 @@
+---
+// Chip with an icon and a label (32px tall): used for every tech / tool list.
+// Without a known icon it is a plain chip with the text.
+import TechIcon from './TechIcon.astro';
+
+interface Props {
+  name: string;
+  /** Element to render as (li inside lists). */
+  as?: 'li' | 'span';
+}
+
+const { name, as: Tag = 'li' } = Astro.props;
+---
+
+<Tag class="chip tech-chip">
+  <TechIcon name={name} size={16} />
+  <span>{name}</span>
+</Tag>
+
+<style>
+  .tech-chip {
+    gap: 8px;
+    height: 32px;
+    padding: 0 11px 0 9px;
+    border-radius: 9px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+</style>

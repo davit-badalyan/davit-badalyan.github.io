@@ -1,0 +1,429 @@
+---
+// Project player card: one surface card with the media stage (the frame holds the <video>,
+// sized from the manifest's aspect ratio) and a playlist panel — 320px on the right ≥1024,
+// below the stage under 1024 (items scroll sideways). The playlist shows one list at a time
+// (Highlights or Full); the Gallery's tabs pick it with a "player:list" event ({ key }).
+// The whole playlist is hidden when the project has exactly one video. Only the selected video
+// is ever loaded; `deferred` players (in the project sheet) load on "player:activate".
+// Switching never changes the layout: the old frame stays visible (a canvas snapshot) over the
+// new poster until the new video has data, then fades out (150ms; instant with reduced motion).
+import type { Project } from '../data/personal';
+import { formatDuration, playerItems, type PlayerItem } from '../utils/personal';
+import MediaStage from './MediaStage.astro';
+
+interface Props {
+  project: Project;
+  /** Leave the video empty until the player receives "player:activate". */
+  deferred?: boolean;
+  /** Portrait projects get a taller stage below 1024px. */
+  portraitStage?: boolean;
+}
+
+const { project, deferred = false, portraitStage = false } = Astro.props;
+const lists = [
+  { key: 'highlights', label: 'Highlights', items: playerItems(project, project.media.clips) },
+  { key: 'full', label: 'Full', items: playerItems(project, project.media.full) },
+].filter((list) => list.items.length > 0);
+
+const total = lists.reduce((sum, list) => sum + list.items.length, 0);
+const showPlaylist = total > 1;
+const first: PlayerItem | undefined = lists[0]?.items[0];
+const id = (suffix: string) => `player-${project.slug}-${suffix}`;
+const time = (item: PlayerItem) => formatDuration(item.duration);
+---
+
+{
+  first && (
+    <div class:list={['player', { 'player--single': !showPlaylist }]} data-player>
+      <MediaStage
+        variant="player"
+        portrait={portraitStage && project.media.orientation === 'portrait'}
+        backdrop={first.posterUrl}
+        ar={first.width / first.height}
+        class="player__stage"
+        frameClass="player__frame"
+        frameAttrs={{ style: `background-image: url('${first.posterUrl}')`, 'data-player-frame': '' }}
+        data-player-stage
+      >
+        <video
+          class="player__video"
+          controls
+          playsinline
+          preload="metadata"
+          poster={first.posterUrl}
+          src={deferred ? undefined : first.url}
+          data-src={first.url}
+          width={first.width}
+          height={first.height}
+          muted={!first.hasAudio}
+          aria-label={`${project.title}: ${first.label}`}
+          data-player-video
+        />
+        <canvas class="player__snap" aria-hidden="true" data-player-snap></canvas>
+      </MediaStage>
+
+      {showPlaylist && (
+        <div class="player__list">
+          {lists.map((list, listIndex) => (
+            <div
+              class="player__panel"
+              id={id(`panel-${list.key}`)}
+              hidden={listIndex > 0}
+              data-player-panel={list.key}
+            >
+              <ul class="player__items" aria-label={`${list.label} videos`}>
+                {list.items.map((item, itemIndex) => {
+                  const selected = listIndex === 0 && itemIndex === 0;
+                  return (
+                    <li>
+                      <button
+                        type="button"
+                        class="player__item"
+                        aria-pressed={selected ? 'true' : 'false'}
+                        tabindex={itemIndex === 0 ? '0' : '-1'}
+                        data-player-item
+                        data-label={item.label}
+                        data-src={item.url}
+                        data-poster={item.posterUrl}
+                        data-width={item.width}
+                        data-height={item.height}
+                        data-time={time(item)}
+                        data-audio={item.hasAudio ? '' : undefined}
+                      >
+                        <MediaStage variant="thumb" backdrop={item.posterUrl} ar={item.width / item.height} class="player__thumb">
+                          <img
+                            src={item.posterUrl}
+                            width={item.width}
+                            height={item.height}
+                            sizes="96px"
+                            loading="lazy"
+                            decoding="async"
+                            alt=""
+                          />
+                        </MediaStage>
+                        <span class="player__item-text">
+                          <span class="player__item-label">{item.label}</span>
+                          <span class="player__item-time" data-item-time>
+                            {selected ? `Now playing · ${time(item)}` : time(item)}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+<style>
+  /* ≥1024: stage | 320px playlist. The playlist is size-contained, so the row height comes
+     from the stage alone and a long list scrolls inside the panel. */
+  .player {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: var(--surface);
+  }
+
+  .player--single {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .player :global(.player__stage) {
+    border-radius: 0;
+  }
+
+  /* The frame keeps its size; the poster of the selected video is its background. */
+  .player :global(.player__frame) {
+    background-color: #000;
+    background-position: center;
+    background-size: cover;
+  }
+
+  .player__video {
+    position: absolute;
+    inset: 0;
+    background: transparent;
+  }
+
+  /* Snapshot of the previous video, faded out once the new one has data. */
+  .player__snap {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 150ms ease;
+  }
+
+  .player__snap.is-shown {
+    opacity: 1;
+    transition: none;
+  }
+
+  .player__list {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    border-left: 1px solid var(--line);
+    contain: size;
+  }
+
+  .player__panel {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  .player__panel[hidden] {
+    display: none;
+  }
+
+  .player__items {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px;
+  }
+
+  .player__item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+    padding: 8px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--text);
+    text-align: left;
+    transition:
+      opacity 0.15s ease,
+      background-color 200ms ease;
+  }
+
+  @media (hover: hover) {
+    .player__item:hover {
+      opacity: 1;
+      background: color-mix(in srgb, var(--accent) 6%, transparent);
+    }
+  }
+
+  .player__item[aria-pressed='true'] {
+    background: var(--accent-soft);
+  }
+
+  .player__item :global(.player__thumb) {
+    width: 96px;
+    flex: none;
+    border-radius: 8px;
+  }
+
+  .player__item :global(.player__thumb .stage__frame) {
+    border-radius: 4px;
+  }
+
+  .player__item-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .player__item-label {
+    overflow: hidden;
+    font-size: 14px;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .player__item-time {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .player__item[aria-pressed='true'] .player__item-time {
+    color: var(--accent);
+  }
+
+  /* < 1024: playlist under the stage, items in a sideways-scrolling row. */
+  @media (max-width: 1023.98px) {
+    .player {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .player__list {
+      border-top: 1px solid var(--line);
+      border-left: 0;
+      contain: none;
+    }
+
+    .player__panel {
+      overflow: visible;
+    }
+
+    .player__items {
+      flex-direction: row;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      scrollbar-width: thin;
+    }
+
+    .player__items > li {
+      flex: none;
+      width: 260px;
+    }
+  }
+
+  @media (max-width: 639.98px) {
+    .player {
+      border-radius: 14px;
+    }
+  }
+</style>
+
+<script>
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  type Player = HTMLElement & { playerReady?: boolean };
+
+  /** Loads one item into the video. `play` only after a user action (never with reduced motion). */
+  function load(player: HTMLElement, item: HTMLButtonElement, play: boolean) {
+    const video = player.querySelector<HTMLVideoElement>('[data-player-video]');
+    const stage = player.querySelector<HTMLElement>('[data-player-stage]');
+    if (!video || !stage) return;
+
+    player.querySelectorAll<HTMLButtonElement>('[data-player-item]').forEach((other) => {
+      const selected = other === item;
+      other.setAttribute('aria-pressed', String(selected));
+      const label = other.querySelector<HTMLElement>('[data-item-time]');
+      if (label) label.textContent = selected ? `Now playing · ${other.dataset.time}` : (other.dataset.time ?? '');
+    });
+
+    const { src = '', poster = '', width = '16', height = '9' } = item.dataset;
+    const hasAudio = item.dataset.audio !== undefined;
+    const frame = player.querySelector<HTMLElement>('[data-player-frame]');
+    const snap = player.querySelector<HTMLCanvasElement>('[data-player-snap]');
+    // 1. Shape first (from the manifest — within a project all videos share one size, so the
+    //    frame does not move), then the new poster as the frame background and backdrop.
+    stage.style.setProperty('--ar', (Number(width) / Number(height)).toFixed(4));
+    if (frame && poster) frame.style.backgroundImage = `url('${poster}')`;
+    const backdrop = stage.querySelector<HTMLImageElement>('[data-stage-bd]');
+    if (backdrop && poster) backdrop.src = poster;
+    const title = video.getAttribute('aria-label')?.split(': ')[0];
+    if (title && item.dataset.label) video.setAttribute('aria-label', `${title}: ${item.dataset.label}`);
+    // Silent clips stay muted; videos with sound only ever play because the visitor asked for it.
+    video.muted = !hasAudio;
+    if (video.dataset.src !== src || !video.getAttribute('src')) {
+      // 2. Keep the current picture: snapshot the playing frame onto the canvas on top.
+      const hadPicture = video.readyState >= 2 && video.videoWidth > 0;
+      if (snap && hadPicture) {
+        snap.width = video.videoWidth;
+        snap.height = video.videoHeight;
+        try {
+          snap.getContext('2d')?.drawImage(video, 0, 0, snap.width, snap.height);
+          snap.classList.add('is-shown');
+        } catch {
+          snap.classList.remove('is-shown');
+        }
+      }
+      // 3. Swap the source; 4. fade the snapshot out once the new video can show a frame.
+      video.poster = poster;
+      video.dataset.src = src;
+      video.src = src;
+      if (snap?.classList.contains('is-shown')) {
+        video.addEventListener(
+          'loadeddata',
+          () => {
+            if (reducedMotion.matches) snap.style.transition = 'none';
+            snap.classList.remove('is-shown');
+          },
+          { once: true },
+        );
+      }
+    }
+    if (play && !reducedMotion.matches) void video.play().catch(() => {});
+  }
+
+  /** Roving focus with the arrow keys inside a group of buttons. */
+  function arrowKeys(buttons: HTMLButtonElement[]) {
+    buttons.forEach((button, index) => {
+      button.addEventListener('keydown', (event) => {
+        const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[event.key];
+        const jump = event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : undefined;
+        if (step === undefined && jump === undefined) return;
+        event.preventDefault();
+        const next = buttons[jump ?? (index + step! + buttons.length) % buttons.length];
+        buttons.forEach((other) => other.setAttribute('tabindex', other === next ? '0' : '-1'));
+        next.focus();
+        next.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      });
+    });
+  }
+
+  function initPlayer(player: Player) {
+    if (player.playerReady) return;
+    player.playerReady = true;
+
+    const panels = Array.from(player.querySelectorAll<HTMLElement>('[data-player-panel]'));
+
+    // The Gallery's Highlights / Full tabs: show that list and load its first video (paused).
+    player.addEventListener('player:list', (event) => {
+      const key = (event as CustomEvent<{ key: string }>).detail?.key;
+      const panel = panels.find((candidate) => candidate.dataset.playerPanel === key);
+      if (!panel || !panel.hidden) return;
+      panels.forEach((other) => (other.hidden = other !== panel));
+      const items = Array.from(panel.querySelectorAll<HTMLButtonElement>('[data-player-item]'));
+      items.forEach((item, index) => item.setAttribute('tabindex', index === 0 ? '0' : '-1'));
+      player.querySelector<HTMLVideoElement>('[data-player-video]')?.pause();
+      if (items[0]) load(player, items[0], false);
+    });
+
+    panels.forEach((panel) => {
+      const items = Array.from(panel.querySelectorAll<HTMLButtonElement>('[data-player-item]'));
+      items.forEach((item) =>
+        item.addEventListener('click', () => {
+          items.forEach((other) => other.setAttribute('tabindex', other === item ? '0' : '-1'));
+          load(player, item, true);
+        }),
+      );
+      arrowKeys(items);
+    });
+
+    // Sheet players: load the selected video when the sheet shows this project, and start it
+    // right away only if it is silent (and motion is allowed). Single-video players have no
+    // playlist buttons, so the video element itself is the source of truth.
+    player.addEventListener('player:activate', () => {
+      const item = player.querySelector<HTMLButtonElement>('[data-player-item][aria-pressed="true"]');
+      if (item) {
+        load(player, item, item.dataset.audio === undefined);
+        return;
+      }
+      const video = player.querySelector<HTMLVideoElement>('[data-player-video]');
+      if (video && !video.getAttribute('src')) video.src = video.dataset.src ?? '';
+      if (video && video.muted && !reducedMotion.matches) void video.play().catch(() => {});
+    });
+    player.addEventListener('player:deactivate', () => {
+      player.querySelector<HTMLVideoElement>('[data-player-video]')?.pause();
+    });
+  }
+
+  const initPlayers = () => document.querySelectorAll<Player>('[data-player]').forEach(initPlayer);
+
+  initPlayers();
+  document.addEventListener('astro:page-load', initPlayers);
+</script>

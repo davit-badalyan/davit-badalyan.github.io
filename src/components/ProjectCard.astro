@@ -1,0 +1,460 @@
+---
+// Project card: 16:10 media stage (cover in a frame, loop preview inside the same frame) with a
+// kind tag on every card ("Case Study" in accent, "Demo" in teal); then title, "{context} · {related company or client} · {year}", a stack row of
+// tech / AI icon tiles, and a footer with the platform and "View →". The whole card is one link to /projects/<slug>/: a case study page, or a demo's
+// no-JS fallback page — with JavaScript a demo click opens the project sheet instead
+// (#project=<slug>, handled by ProjectLightbox).
+// Loop preview: hover/focus on hover-capable devices; on touch, the card that has been ≥60% in
+// view for a moment (one at a time). Never with reduced motion.
+import type { Project } from '../data/personal';
+import { cardMetaLine, kindLabel, mediaUrl, projectUrl } from '../utils/personal';
+import Icon from './Icon.astro';
+import MediaStage from './MediaStage.astro';
+import PlatformIcons from './PlatformIcons.astro';
+import TechIcon from './TechIcon.astro';
+
+interface Props {
+  project: Project;
+  /** Link relation, e.g. "prev" / "next" in a project page's "More". */
+  rel?: 'prev' | 'next';
+  /** On the Work page a demo card opens the project sheet; elsewhere (project pages) it is a
+   *  plain link to the demo page. */
+  opensSheet?: boolean;
+}
+
+const { project, rel, opensSheet = true } = Astro.props;
+const { cover, loop } = project.media;
+const isCaseStudy = project.detailLevel === 'case-study';
+const href = projectUrl(project);
+const coverUrl = mediaUrl(project, cover.src);
+const coverAr = cover.width / cover.height;
+const loopAr = loop.width / loop.height;
+const titleId = `card-title-${project.slug}`;
+const hintId = `card-hint-${project.slug}`;
+// Stack row: up to 7 tech tiles, then "+N"; AI tools after a divider. On narrow cards a script
+// moves trailing tech tiles into "+N" until the row fits on its one line (it never wraps).
+const STACK_MAX = 7;
+const shownTech = project.tech.slice(0, STACK_MAX);
+const moreTech = Math.max(0, project.tech.length - STACK_MAX);
+const aiTools = project.aiTools;
+---
+
+<a
+  class="project-card"
+  href={href}
+  rel={rel}
+  aria-labelledby={`${titleId} ${hintId}`}
+  aria-haspopup={isCaseStudy || !opensSheet ? undefined : 'dialog'}
+  data-project-card
+  data-slug={project.slug}
+  data-kind={project.detailLevel}
+>
+  <div class="project-card__surface">
+    <MediaStage
+      backdrop={coverUrl}
+      ar={coverAr}
+      class="project-card__stage"
+      frameClass="project-card__frame"
+      data-cover-ar={coverAr.toFixed(4)}
+      data-loop-ar={loopAr.toFixed(4)}
+    >
+      <img
+        class="project-card__cover"
+        src={coverUrl}
+        width={cover.width}
+        height={cover.height}
+        sizes="(min-width: 1024px) 340px, (min-width: 640px) 45vw, 90vw"
+        loading="lazy"
+        decoding="async"
+        alt=""
+      />
+      <video
+        class="project-card__loop"
+        muted
+        loop
+        playsinline
+        preload="none"
+        width={loop.width}
+        height={loop.height}
+        aria-hidden="true"
+        data-loop-src={mediaUrl(project, loop.src)}
+        data-card-loop></video>
+      <span slot="overlay" class:list={['project-card__tag', { 'project-card__tag--demo': !isCaseStudy }]}>{kindLabel(project)}</span>
+    </MediaStage>
+
+    <div class="project-card__body">
+      <h3 class="project-card__title" id={titleId}>{project.title}</h3>
+      <span class="project-card__meta">{cardMetaLine(project)}</span>
+      <span class="project-card__stack" data-card-stack>
+        {
+          shownTech.map((name) => (
+            <span class="project-card__tile" title={name} data-tech-tile>
+              <TechIcon name={name} size={16} />
+              <span class="visually-hidden">{name}</span>
+            </span>
+          ))
+        }
+        <span
+          class:list={['project-card__tile project-card__tile--more', { 'is-cut': moreTech === 0 }]}
+          title={project.tech.slice(STACK_MAX).join(', ')}
+          data-more={moreTech}
+          data-names={JSON.stringify(project.tech)}
+        >
+          <span data-more-count>+{moreTech}</span>
+          <span class="visually-hidden">more</span>
+        </span>
+        {
+          aiTools.length > 0 && (
+            <>
+              <span class="project-card__divider" aria-hidden="true" />
+              {aiTools.map((name) => (
+                <span class="project-card__tile" title={name}>
+                  <TechIcon name={name} size={16} />
+                  <span class="visually-hidden">{name}</span>
+                </span>
+              ))}
+            </>
+          )
+        }
+      </span>
+      <span class="project-card__foot">
+        <span class="project-card__platform">
+          <PlatformIcons platform={project.platform} />
+          {project.platform}
+        </span>
+        <span class="project-card__action">
+          View
+          <Icon name="arrow-right" size={14} />
+        </span>
+      </span>
+    </div>
+  </div>
+  <span class="visually-hidden" id={hintId}>{kindLabel(project)}</span>
+</a>
+
+<style>
+  /* The link is the stable hit area; only the inner surface lifts on hover, so the pointer
+     never "falls off" the card's edge as it moves (no hover flicker). */
+  .project-card {
+    display: flex;
+    min-width: 0;
+    height: 100%;
+    border-radius: var(--radius-card-lg);
+    color: var(--text);
+  }
+
+  .project-card:hover {
+    opacity: 1;
+  }
+
+  .project-card__surface {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-card-lg);
+    background: var(--surface);
+    transition:
+      transform 260ms var(--ease-out),
+      border-color 200ms ease;
+  }
+
+  @media (hover: hover) {
+    .project-card:hover .project-card__surface {
+      transform: translateY(-4px);
+      border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+    }
+  }
+
+  .project-card__surface :global(.project-card__stage) {
+    border-radius: 0;
+  }
+
+  /* The media is decoration inside the link: clicks and focus always go to the link itself. */
+  .project-card__surface :global(.project-card__stage) > * {
+    pointer-events: none;
+  }
+
+  .project-card__stage :global(.project-card__frame) {
+    background: var(--stage);
+  }
+
+  /* Cover and loop share the frame: both fill it (cover underneath, loop fades in on top). */
+  .project-card__cover,
+  .project-card__loop {
+    position: absolute;
+    inset: 0;
+  }
+
+  .project-card__loop {
+    opacity: 0;
+    transition: opacity 200ms ease;
+  }
+
+  .project-card__loop.is-playing {
+    opacity: 1;
+  }
+
+  .project-card__tag {
+    position: absolute;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.4;
+    border-radius: 7px;
+    top: 12px;
+    left: 12px;
+    padding: 4px 9px;
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+
+  .project-card__tag--demo {
+    background: var(--demo);
+    color: var(--on-demo);
+  }
+
+  .project-card__body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px 18px;
+  }
+
+  .project-card__title {
+    overflow: hidden;
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 1.3;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .project-card__meta {
+    overflow: hidden;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Pinned to the bottom, so footers line up across a row; nothing in it ever wraps. */
+  .project-card__foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+    white-space: nowrap;
+  }
+
+  .project-card__meta {
+    margin-bottom: 0;
+  }
+
+  /* Stack row: one 28px line of icon tiles, never wraps (extra tech collapses into "+N"). */
+  .project-card__stack {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    /* 10px above the row and 16px below it, counting the body's 4px gap. */
+    margin: 6px 0 12px;
+    overflow: hidden;
+  }
+
+  .project-card__tile {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--chip);
+  }
+
+  /* Tiles the fit script takes out of a narrow row (they join the "+N" count). */
+  .project-card__tile.is-cut {
+    display: none;
+  }
+
+  .project-card__tile--more {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .project-card__divider {
+    flex: none;
+    width: 1px;
+    height: 18px;
+    margin: 0 4px;
+    background: var(--line);
+  }
+
+  .project-card__platform {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 13px;
+    color: var(--muted);
+    text-overflow: ellipsis;
+  }
+
+  .project-card__platform :global(svg) {
+    flex: none;
+  }
+
+  .project-card__action {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+</style>
+
+<script>
+  // Loop previews: lazy src, one playing at a time, inside the cover's frame.
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const canHover = window.matchMedia('(hover: hover)');
+
+  type Card = HTMLElement & { loopReady?: boolean };
+
+  let playing: HTMLVideoElement | null = null;
+  let observer: IntersectionObserver | null = null;
+
+  /** The frame follows the media shown (a loop may have a different shape than the cover). */
+  function setShape(video: HTMLVideoElement, which: 'loop' | 'cover') {
+    const stage = video.closest<HTMLElement>('.stage');
+    const ar = which === 'loop' ? stage?.dataset.loopAr : stage?.dataset.coverAr;
+    if (stage && ar) stage.style.setProperty('--ar', ar);
+  }
+
+  function play(video: HTMLVideoElement) {
+    if (reducedMotion.matches) return;
+    if (playing && playing !== video) stop(playing);
+    if (!video.getAttribute('src')) video.src = video.dataset.loopSrc ?? '';
+    playing = video;
+    // Every start shows the loop from its first frame.
+    try {
+      video.currentTime = 0;
+    } catch {
+      /* not seekable yet: it starts at 0 anyway */
+    }
+    video
+      .play()
+      .then(() => {
+        if (playing !== video) return;
+        setShape(video, 'loop');
+        video.classList.add('is-playing');
+      })
+      .catch(() => {});
+  }
+
+  function stop(video: HTMLVideoElement) {
+    video.pause();
+    video.classList.remove('is-playing');
+    setShape(video, 'cover');
+    if (playing === video) playing = null;
+  }
+
+  function initCards() {
+    const cards = Array.from(document.querySelectorAll<Card>('[data-project-card]')).filter((card) => !card.loopReady);
+    if (cards.length === 0) return;
+
+    cards.forEach((card) => {
+      card.loopReady = true;
+      const video = card.querySelector<HTMLVideoElement>('[data-card-loop]');
+      if (!video) return;
+      const start = () => canHover.matches && play(video);
+      const end = () => canHover.matches && stop(video);
+      card.addEventListener('pointerenter', start);
+      card.addEventListener('pointerleave', end);
+      card.addEventListener('focus', () => !reducedMotion.matches && play(video));
+      card.addEventListener('blur', () => stop(video));
+      // Opening the project sheet / a project page: the preview must not keep playing behind it.
+      card.addEventListener('click', () => stop(video));
+    });
+
+    // Touch devices: play the card that is at least 60% visible; pause it when it leaves.
+    // A card has to stay in view briefly first, so scrolling past cards loads nothing.
+    observer?.disconnect();
+    const pending = new Map<Element, number>();
+    observer = new IntersectionObserver(
+      (entries) => {
+        if (canHover.matches) return;
+        entries.forEach((entry) => {
+          const video = entry.target.querySelector<HTMLVideoElement>('[data-card-loop]');
+          if (!video) return;
+          window.clearTimeout(pending.get(entry.target));
+          pending.delete(entry.target);
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.6) {
+            pending.set(entry.target, window.setTimeout(() => play(video), 200));
+          } else if (playing === video) {
+            stop(video);
+          }
+        });
+      },
+      { threshold: [0, 0.6] },
+    );
+    document.querySelectorAll('[data-project-card]').forEach((card) => observer?.observe(card));
+  }
+
+  // Stack rows: when the tiles don't fit the card, the last tech tiles fold into "+N" (the AI
+  // tiles after the divider always stay). Re-fitted whenever a row changes width.
+  function fitStack(stack: HTMLElement) {
+    const tiles = Array.from(stack.querySelectorAll<HTMLElement>('[data-tech-tile]'));
+    const more = stack.querySelector<HTMLElement>('[data-more]');
+    const count = more?.querySelector<HTMLElement>('[data-more-count]');
+    if (!more || !count) return;
+    const base = Number(more.dataset.more ?? 0);
+    const names: string[] = JSON.parse(more.dataset.names ?? '[]');
+    const show = (visible: number) => {
+      tiles.forEach((tile, index) => tile.classList.toggle('is-cut', index >= visible));
+      const hidden = base + tiles.length - visible;
+      more.classList.toggle('is-cut', hidden === 0);
+      count.textContent = `+${hidden}`;
+      more.title = names.slice(visible).join(', ');
+    };
+    let visible = tiles.length;
+    show(visible);
+    while (visible > 1 && stack.scrollWidth > stack.clientWidth + 0.5) show(--visible);
+  }
+
+  const stackObserver = new ResizeObserver((entries) => entries.forEach((entry) => fitStack(entry.target as HTMLElement)));
+
+  function initStacks() {
+    document.querySelectorAll<HTMLElement>('[data-card-stack]').forEach((stack) => {
+      if (stack.dataset.fitReady !== undefined) return;
+      stack.dataset.fitReady = '';
+      stackObserver.observe(stack);
+    });
+  }
+
+  // Leaving a page: stop the preview and drop the observers.
+  document.addEventListener('astro:before-swap', () => {
+    if (playing) stop(playing);
+    observer?.disconnect();
+    observer = null;
+    stackObserver.disconnect();
+  });
+
+  initCards();
+  initStacks();
+  document.addEventListener('astro:page-load', () => {
+    initCards();
+    initStacks();
+  });
+</script>

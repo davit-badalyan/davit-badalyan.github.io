@@ -1,0 +1,396 @@
+---
+// Full-viewport screenshot viewer (native modal <dialog>), one per page, always dark.
+// Rows: top bar (project title, "Screenshot N of M", close) / image (52px round prev / next on
+// the sides; below the image on phones) / filmstrip (click to jump). Opened by any element
+// with data-viewer-item; items sharing a data-viewer-group form the set, data-viewer-title
+// names the project. Keys ← → Home End Esc, swipe on touch; a click on the empty dark background
+// closes it; focus returns to the opener (so opening from the project sheet returns to the sheet).
+// Nothing in the viewer can be selected or dragged, so fast clicking never highlights anything.
+import Icon from './Icon.astro';
+---
+
+<dialog class="viewer" aria-labelledby="viewer-title" data-image-viewer>
+  <div class="viewer__top">
+    <div class="viewer__heading">
+      <h2 class="viewer__title" id="viewer-title" data-viewer-title></h2>
+      <span class="viewer__count" aria-live="polite" data-viewer-count></span>
+    </div>
+    <button type="button" class="viewer__btn" aria-label="Close" data-viewer-close>
+      <Icon name="close" />
+    </button>
+  </div>
+
+  <div class="viewer__main">
+    <button type="button" class="viewer__btn viewer__btn--round viewer__side" aria-label="Previous screenshot" data-viewer-prev>
+      <Icon name="chevron-left" />
+    </button>
+    <div class="viewer__stage" data-viewer-stage>
+      <img class="viewer__img" alt="" decoding="async" draggable="false" data-viewer-img />
+    </div>
+    <button type="button" class="viewer__btn viewer__btn--round viewer__side" aria-label="Next screenshot" data-viewer-next>
+      <Icon name="chevron-right" />
+    </button>
+  </div>
+
+  <div class="viewer__bottom">
+    <div class="viewer__pair">
+      <button type="button" class="viewer__btn viewer__btn--round" aria-label="Previous screenshot" data-viewer-prev>
+        <Icon name="chevron-left" />
+      </button>
+      <button type="button" class="viewer__btn viewer__btn--round" aria-label="Next screenshot" data-viewer-next>
+        <Icon name="chevron-right" />
+      </button>
+    </div>
+    <ul class="viewer__film" aria-label="Screenshots" data-viewer-film></ul>
+  </div>
+</dialog>
+
+<style>
+  /* Full viewport, dark in both themes. margin/border/padding reset the dialog defaults. */
+  .viewer {
+    width: 100vw;
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: rgb(8 9 12 / 96%);
+    color: #eceef2;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  .viewer :global(img) {
+    -webkit-user-drag: none;
+  }
+
+  /* minmax(0, 1fr): the column is the viewport, never the filmstrip's full width. */
+  .viewer[open] {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr);
+    overflow: hidden;
+    animation: fade 220ms ease;
+  }
+
+  .viewer::backdrop {
+    background: transparent;
+  }
+
+  .viewer__top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+  }
+
+  .viewer__heading {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .viewer__title {
+    overflow: hidden;
+    font-size: 16px;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .viewer__count {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: #a9b0bb;
+  }
+
+  .viewer__btn {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid rgb(255 255 255 / 12%);
+    border-radius: 12px;
+    background: rgb(255 255 255 / 8%);
+    color: #fff;
+  }
+
+  .viewer__btn:hover {
+    opacity: 1;
+    background: rgb(255 255 255 / 14%);
+  }
+
+  .viewer__btn[hidden] {
+    display: none;
+  }
+
+  .viewer__btn--round {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+  }
+
+  .viewer__main {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr) 72px;
+    align-items: center;
+    min-height: 0;
+    padding: 0 8px;
+  }
+
+  .viewer__side {
+    justify-self: center;
+  }
+
+  .viewer__stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 0;
+    padding: 8px;
+    touch-action: pan-y;
+  }
+
+  .viewer__img {
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: 100%;
+    border-radius: 10px;
+    object-fit: contain;
+    box-shadow: 0 20px 60px -10px rgb(0 0 0 / 70%);
+  }
+
+  .viewer__pair {
+    display: none;
+    justify-content: center;
+    gap: 12px;
+    padding-top: 10px;
+  }
+
+  .viewer__film {
+    display: flex;
+    gap: 8px;
+    padding: 14px 20px 20px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  /* Centered when it fits, scrollable when it doesn't. */
+  .viewer__film > :global(li:first-child) {
+    margin-left: auto;
+  }
+
+  .viewer__film > :global(li:last-child) {
+    margin-right: auto;
+  }
+
+  .viewer__film :global(.viewer__thumb) {
+    display: block;
+    width: 90px;
+    height: 56px;
+    flex: none;
+    padding: 0;
+    overflow: hidden;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    background: #16181d;
+    opacity: 0.55;
+    transition:
+      opacity 0.15s ease,
+      border-color 200ms ease;
+  }
+
+  .viewer__film :global(.viewer__thumb:hover) {
+    opacity: 0.85;
+  }
+
+  .viewer__film :global(.viewer__thumb[aria-current='true']) {
+    border-color: #8ea2ff;
+    opacity: 1;
+  }
+
+  .viewer__film :global(.viewer__thumb img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* < 640: prev / next move below the image as a centered pair; smaller filmstrip. */
+  @media (max-width: 639.98px) {
+    .viewer__top {
+      padding: 12px 16px;
+    }
+
+    .viewer__main {
+      grid-template-columns: minmax(0, 1fr);
+      padding: 0;
+    }
+
+    .viewer__side {
+      display: none;
+    }
+
+    .viewer__pair {
+      display: flex;
+    }
+
+    .viewer__film {
+      padding: 12px 16px 16px;
+    }
+
+    .viewer__film :global(.viewer__thumb) {
+      width: 70px;
+      height: 44px;
+    }
+  }
+</style>
+
+<script>
+  import { trapFocus } from '../utils/dialog';
+
+  type Viewer = HTMLDialogElement & { viewerReady?: boolean };
+
+  let items: HTMLElement[] = [];
+  let index = 0;
+  let trigger: HTMLElement | null = null;
+
+  const viewer = () => document.querySelector<Viewer>('[data-image-viewer]');
+
+  function show(dialog: HTMLDialogElement) {
+    const item = items[index];
+    const img = dialog.querySelector<HTMLImageElement>('[data-viewer-img]');
+    if (!item || !img) return;
+    img.src = item.dataset.src ?? '';
+    img.width = Number(item.dataset.width);
+    img.height = Number(item.dataset.height);
+    img.alt = item.dataset.alt ?? '';
+    const count = dialog.querySelector<HTMLElement>('[data-viewer-count]');
+    if (count) count.textContent = `Screenshot ${index + 1} of ${items.length}`;
+    dialog.querySelectorAll<HTMLElement>('[data-viewer-prev], [data-viewer-next]').forEach((button) => (button.hidden = items.length < 2));
+    const film = dialog.querySelector<HTMLElement>('[data-viewer-film]');
+    film?.querySelectorAll<HTMLButtonElement>('button').forEach((thumb, thumbIndex) => {
+      const active = thumbIndex === index;
+      thumb.setAttribute('aria-current', String(active));
+      // Scroll only the filmstrip (scrollIntoView would also scroll the dialog / page).
+      if (active && film.scrollWidth > film.clientWidth) {
+        const li = thumb.parentElement as HTMLElement;
+        film.scrollTo({ left: li.offsetLeft - film.offsetLeft - (film.clientWidth - li.offsetWidth) / 2 });
+      }
+    });
+  }
+
+  function go(dialog: HTMLDialogElement, next: number) {
+    if (items.length === 0) return;
+    index = (next + items.length) % items.length;
+    show(dialog);
+  }
+
+  /** Filmstrip of the current set (rebuilt on every open). */
+  function buildFilm(dialog: HTMLDialogElement) {
+    const film = dialog.querySelector<HTMLElement>('[data-viewer-film]');
+    if (!film) return;
+    film.replaceChildren(
+      ...items.map((item, itemIndex) => {
+        const li = document.createElement('li');
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'viewer__thumb';
+        button.setAttribute('aria-label', `Screenshot ${itemIndex + 1}`);
+        const img = document.createElement('img');
+        img.src = item.dataset.src ?? '';
+        img.alt = '';
+        img.draggable = false;
+        img.loading = 'lazy';
+        img.decoding = 'async';
+        button.append(img);
+        button.addEventListener('click', () => go(dialog, itemIndex));
+        li.append(button);
+        return li;
+      }),
+    );
+  }
+
+  function close(dialog: HTMLDialogElement) {
+    if (dialog.open) dialog.close(); // focus returns in the "close" listener
+  }
+
+  function initViewer() {
+    const dialog = viewer();
+    if (!dialog || dialog.viewerReady) return;
+    dialog.viewerReady = true;
+    trapFocus(dialog);
+
+    dialog.querySelectorAll('[data-viewer-prev]').forEach((button) => button.addEventListener('click', () => go(dialog, index - 1)));
+    dialog.querySelectorAll('[data-viewer-next]').forEach((button) => button.addEventListener('click', () => go(dialog, index + 1)));
+    dialog.querySelector('[data-viewer-close]')?.addEventListener('click', () => close(dialog));
+    dialog.addEventListener('cancel', (event) => {
+      event.preventDefault();
+      close(dialog);
+    });
+    // However it closed (also natively, e.g. on a repeated Esc): back to the opener.
+    dialog.addEventListener('close', () => trigger?.focus());
+    // A click on anything that is not the image, a button or the filmstrip closes the viewer.
+    dialog.addEventListener('click', (event) => {
+      const target = event.target as Element;
+      if (target.closest('[data-viewer-img], button, [data-viewer-film]')) return;
+      close(dialog);
+    });
+    // No accidental selection on fast / double clicks (buttons and background).
+    dialog.addEventListener('mousedown', (event) => {
+      if (!(event.target as Element).closest('[data-viewer-img]')) event.preventDefault();
+    });
+
+    dialog.addEventListener('keydown', (event) => {
+      const target = { ArrowLeft: index - 1, ArrowRight: index + 1, Home: 0, End: items.length - 1 }[event.key];
+      if (target === undefined) return;
+      event.preventDefault();
+      go(dialog, target);
+    });
+
+    // Swipe left / right on the image (touch).
+    const stage = dialog.querySelector<HTMLElement>('[data-viewer-stage]');
+    let startX = 0;
+    let startY = 0;
+    stage?.addEventListener(
+      'touchstart',
+      (event) => {
+        startX = event.touches[0].clientX;
+        startY = event.touches[0].clientY;
+      },
+      { passive: true },
+    );
+    stage?.addEventListener('touchend', (event) => {
+      const dx = event.changedTouches[0].clientX - startX;
+      const dy = event.changedTouches[0].clientY - startY;
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) go(dialog, index + (dx < 0 ? 1 : -1));
+    });
+  }
+
+  // Delegated, so triggers in the project sheet and on any page work without extra wiring.
+  document.addEventListener('click', (event) => {
+    const item = (event.target as Element | null)?.closest<HTMLElement>('[data-viewer-item]');
+    const dialog = viewer();
+    if (!item || !dialog) return;
+    event.preventDefault();
+    const group = item.dataset.viewerGroup;
+    items = Array.from(document.querySelectorAll<HTMLElement>(`[data-viewer-item][data-viewer-group="${group}"]`));
+    index = Math.max(0, items.indexOf(item));
+    trigger = item;
+    const title = dialog.querySelector<HTMLElement>('[data-viewer-title]');
+    if (title) title.textContent = item.dataset.viewerTitle ?? '';
+    buildFilm(dialog);
+    dialog.showModal();
+    show(dialog);
+  });
+
+  initViewer();
+  document.addEventListener('astro:page-load', initViewer);
+</script>

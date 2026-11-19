@@ -1,0 +1,83 @@
+---
+// Link button (36px): icon + name + accent arrow. External links open in a new tab with ↗;
+// internal links (`internal`) stay in the tab and show →. The text truncates with an ellipsis.
+import Icon from './Icon.astro';
+import TechIcon from './TechIcon.astro';
+
+interface Props {
+  href: string;
+  label: string;
+  /** Name for TechIcon (GitHub, App Store, Google Play, YouTube, Website …). */
+  icon?: string;
+  /** Line icon from Icon.astro instead (e.g. "link" for an internal related-project link). */
+  lineIcon?: 'monitor' | 'phone' | 'globe' | 'play-rect' | 'external' | 'link';
+  internal?: boolean;
+}
+
+const { href, label, icon, lineIcon, internal = false } = Astro.props;
+---
+
+<a class="link-btn" href={href} target={internal ? undefined : '_blank'} rel={internal ? undefined : 'noopener'}>
+  {icon && <TechIcon name={icon} size={16} />}
+  {lineIcon && <Icon name={lineIcon} size={16} />}
+  <span class="link-btn__label">{label}</span>
+  <span class="link-btn__arrow" aria-hidden="true">
+    <Icon name={internal ? 'arrow-right' : 'arrow-up-right'} size={13} />
+  </span>
+  {!internal && <span class="visually-hidden">(opens in a new tab)</span>}
+</a>
+
+<style>
+  /* 36px tall; ::before widens the hit area to 44px. */
+  .link-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    max-width: 100%;
+    height: 36px;
+    padding: 0 12px 0 10px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--text);
+    white-space: nowrap;
+    transition:
+      opacity 0.15s ease,
+      border-color 200ms ease;
+  }
+
+  .link-btn::before {
+    content: '';
+    position: absolute;
+    inset: -4px 0;
+  }
+
+  .link-btn:hover {
+    opacity: 1;
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  }
+
+  .link-btn :global(svg) {
+    flex: none;
+  }
+
+  /* overflow: hidden (for the ellipsis) clips to the line box, so the label needs a full line
+     height — with the button's line-height: 1 the descenders (g, j, p, y) were cut off. */
+  .link-btn__label {
+    min-width: 0;
+    overflow: hidden;
+    line-height: 1.4;
+    text-overflow: ellipsis;
+  }
+
+  .link-btn__arrow {
+    display: flex;
+    flex: none;
+    margin-left: 2px;
+    color: var(--accent);
+  }
+</style>

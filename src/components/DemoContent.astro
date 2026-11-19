@@ -1,0 +1,47 @@
+---
+// Content of a Demo: the start section (hero + details card) and the Gallery (player tabs and
+// screenshots). Shared by the project sheet (compact hero, deferred video) and the demo's no-JS
+// fallback page at /projects/<slug>/.
+import type { Project } from '../data/personal';
+import ProjectGallery from './ProjectGallery.astro';
+import ProjectHero from './ProjectHero.astro';
+
+interface Props {
+  project: Project;
+  /** In the sheet: no video bytes until the sheet shows this project. */
+  deferred?: boolean;
+  /** Prefix for heading ids and the screenshot viewer group (unique per page). */
+  idPrefix: string;
+  /** The sheet's smaller hero. */
+  compact?: boolean;
+  /** h1 on the demo page, h2 in the sheet (the Gallery heading follows one level below). */
+  headingLevel?: 'h1' | 'h2';
+  titleId?: string;
+}
+
+const { project, deferred = false, idPrefix, compact = false, headingLevel = 'h1', titleId } = Astro.props;
+---
+
+<div class="demo-content">
+  <ProjectHero project={project} compact={compact} headingLevel={headingLevel} titleId={titleId} />
+  <ProjectGallery
+    project={project}
+    deferred={deferred}
+    idPrefix={idPrefix}
+    headingLevel={headingLevel === 'h1' ? 'h2' : 'h3'}
+    class="demo-content__gallery"
+  />
+</div>
+
+<style>
+  /* details card → gallery border 40 (32 on phones). */
+  .demo-content :global(.demo-content__gallery) {
+    margin-top: 40px;
+  }
+
+  @media (max-width: 639.98px) {
+    .demo-content :global(.demo-content__gallery) {
+      margin-top: 32px;
+    }
+  }
+</style>

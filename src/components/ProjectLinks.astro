@@ -1,0 +1,46 @@
+---
+// A wrapping row of 36px link buttons (TechIcon + name + accent ↗). Either a project's external
+// links, or an explicit list (credits: icon chosen from the host). Always open in a new tab.
+import type { Project } from '../data/personal';
+import { hrefIcon, linkIcon, projectLinks } from '../utils/personal';
+import LinkButton from './LinkButton.astro';
+
+interface Props {
+  project?: Project;
+  links?: readonly { label: string; href: string; icon?: string }[];
+  class?: string;
+}
+
+const { project, links: given, class: className } = Astro.props;
+const links = given
+  ? given.map(({ label, href, icon }) => ({ label, href, icon: icon ?? hrefIcon(href) }))
+  : project
+    ? projectLinks(project).map(({ key, label, href }) => ({ label, href, icon: linkIcon(key) }))
+    : [];
+---
+
+{
+  links.length > 0 && (
+    <ul class:list={['links', className]}>
+      {links.map(({ label, href, icon }) => (
+        <li>
+          <LinkButton href={href} label={label} icon={icon} />
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+<style>
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .links > li {
+    max-width: 100%;
+    min-width: 0;
+  }
+</style>

@@ -1,0 +1,46 @@
+---
+// Unified media stage (styles in global.css, "Media stage"): a fixed-shape dark stage with a
+// blurred copy of the image behind, and the media as a framed screen at its own aspect ratio.
+// Default slot: the media (<img> / <video>, rendered at 100% inside the frame wrapper).
+// Slot "overlay": badges and buttons placed on the stage, outside the frame.
+import type { HTMLAttributes } from 'astro/types';
+
+interface Props extends HTMLAttributes<'div'> {
+  /** Image for the blurred backdrop (the cover or the poster). */
+  backdrop: string;
+  /** Media width / height, from the manifest. */
+  ar: number;
+  /** Stage shape: "card" 16:10 (default; cards, gallery), "player" 16:9, "thumb" 16:10 small. */
+  variant?: 'card' | 'player' | 'thumb';
+  /** Portrait player: taller stage below 1024px. */
+  portrait?: boolean;
+  /** Extra class and attributes for the frame wrapper (e.g. the player's data hooks). */
+  frameClass?: string;
+  frameAttrs?: Record<string, string>;
+}
+
+const {
+  backdrop,
+  ar,
+  variant = 'card',
+  portrait = false,
+  class: className,
+  style,
+  frameClass,
+  frameAttrs = {},
+  ...rest
+} = Astro.props;
+const styleText = [`--ar: ${ar.toFixed(4)}`, typeof style === 'string' ? style : ''].filter(Boolean).join('; ');
+---
+
+<div
+  class:list={['stage', variant !== 'card' && `stage--${variant}`, portrait && 'stage--portrait', className]}
+  style={styleText}
+  {...rest}
+>
+  <img class="stage__bd" src={backdrop} alt="" aria-hidden="true" loading="lazy" decoding="async" draggable="false" data-stage-bd />
+  <div class:list={['stage__frame', frameClass]} {...frameAttrs}>
+    <slot />
+  </div>
+  <slot name="overlay" />
+</div>

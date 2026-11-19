@@ -1,0 +1,37 @@
+---
+// Icon(s) before a platform value: "iOS, Android" → the Apple and Android logos (15px, 4px gap);
+// Desktop / Web / Ad Networks → their line icons.
+import { platformIcon } from '../utils/personal';
+import Icon from './Icon.astro';
+import TechIcon from './TechIcon.astro';
+
+interface Props {
+  platform: string;
+  size?: number;
+}
+
+const { platform, size = 15 } = Astro.props;
+const mobile = /ios|android/i.test(platform);
+const names = mobile ? ['iOS', 'Android'].filter((name) => new RegExp(name, 'i').test(platform)) : [];
+---
+
+{
+  mobile ? (
+    <span class="platform-icons" aria-hidden="true">
+      {names.map((name) => (
+        <TechIcon name={name} size={size} />
+      ))}
+    </span>
+  ) : (
+    <Icon name={platformIcon(platform)} size={size} />
+  )
+}
+
+<style>
+  .platform-icons {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 4px;
+  }
+</style>

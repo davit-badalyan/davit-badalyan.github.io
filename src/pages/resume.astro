@@ -1,0 +1,598 @@
+---
+import CvButton from '../components/CvButton.astro';
+import LinkButton from '../components/LinkButton.astro';
+import Logo from '../components/Logo.astro';
+import ResumeSection from '../components/ResumeSection.astro';
+import TechIcon from '../components/TechIcon.astro';
+import { about, education, experience, languages, profile, projectsSummary, skills, softSkills } from '../data/site';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { projectUrl, visibleProjects } from '../utils/personal';
+
+// Projects that point back at a Resume entry (e.g. the thesis → Triada Studio and NPUA).
+const relatedProjects = (id: string | undefined) =>
+  id ? visibleProjects.filter((project) => project.related?.some((entry) => entry.href.endsWith(`#${id}`))) : [];
+// Skill names sorted alphabetically (case-insensitive) inside each group.
+const sorted = (items: readonly string[]) => [...items].sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' }));
+---
+
+<BaseLayout title="Resume">
+  <div class="resume">
+    <div class="resume__head enter" style="--i: 0">
+      <div class="resume__heading">
+        <h1 class="page-title">Resume</h1>
+        <p class="resume__subtitle">{profile.title}</p>
+      </div>
+      <CvButton class="resume__download" />
+    </div>
+
+    <ResumeSection label="About Me" id="resume-about" enterIndex={1}>
+      <div class="resume__about">
+        {about.map((paragraph) => <p>{paragraph}</p>)}
+      </div>
+    </ResumeSection>
+
+    <ResumeSection label="Work Experience" id="resume-experience" enterIndex={2}>
+      {
+        experience.map((job) => (
+          <article class="entry" id={'id' in job ? job.id : undefined}>
+            <Logo slug={job.logo} size={44} class="entry__logo" />
+            <div class="entry__body">
+              <div class="entry__row">
+                <h3 class="entry__title">{job.role}</h3>
+                <span class="entry__dates">
+                  <span>{job.dates}</span>
+                  <span aria-hidden="true">·</span>
+                  <span>{job.duration}</span>
+                </span>
+              </div>
+              <div class="entry__row entry__row--sub">
+                <span class="entry__org">
+                  <strong class="entry__org-name">{job.company}</strong>
+                  <span class="muted entry__org-loc">{job.location}</span>
+                </span>
+                <span class="entry__links">
+                  {job.links.map((link) => (
+                    <a class="text-link" href={link.href}>
+                      {link.label} ↗
+                    </a>
+                  ))}
+                </span>
+              </div>
+              <p class="entry__text">{job.description}</p>
+              {relatedProjects('id' in job ? job.id : undefined).map((project) => (
+                <div class="entry__related">
+                  <LinkButton href={projectUrl(project)} label={`Related: ${project.title}`} lineIcon="link" internal />
+                </div>
+              ))}
+            </div>
+          </article>
+        ))
+      }
+    </ResumeSection>
+
+    <ResumeSection label="Education and Training" id="resume-education" enterIndex={3}>
+      {
+        education.map((item) => (
+          <article class="entry entry--edu" id={'id' in item ? item.id : undefined}>
+            <Logo slug={item.logo} size={44} class="entry__logo" />
+            <div class="entry__body">
+              <div class="entry__row">
+                <h3 class="entry__title">{item.title}</h3>
+                <span class="entry__dates">
+                  <span>{item.dates}</span>
+                  <span aria-hidden="true">·</span>
+                  <span>{item.duration}</span>
+                </span>
+              </div>
+              <div class="entry__row entry__row--sub">
+                <span class="entry__org">
+                  <strong class="entry__org-name">{item.school}</strong>
+                  <span class="muted entry__org-loc">{item.location}</span>
+                </span>
+                <span class="entry__links">
+                  {item.links.map((link) => (
+                    <a class="text-link" href={link.href}>
+                      {link.label} ↗
+                    </a>
+                  ))}
+                </span>
+              </div>
+              <span class="entry__field">Field of study: {item.field}</span>
+              {relatedProjects('id' in item ? item.id : undefined).map((project) => (
+                <div class="entry__related">
+                  <LinkButton href={projectUrl(project)} label={`Related: ${project.title}`} lineIcon="link" internal />
+                </div>
+              ))}
+            </div>
+          </article>
+        ))
+      }
+    </ResumeSection>
+
+    <ResumeSection label="Skills" id="resume-skills" enterIndex={4}>
+      <ul class="skills">
+        {
+          skills.map((group) => (
+            <li class:list={['skills__card', { 'skills__card--wide': 'wide' in group, 'skills__card--secondary': 'secondary' in group }]}>
+              <h3 class="label skills__label">{group.label}</h3>
+              {group.groups ? (
+                <dl class="skills__groups">
+                  {group.groups.map((sub) => (
+                    <div class="skills__group">
+                      <dt class="skills__group-label">{sub.label}</dt>
+                      <dd>
+                        <ul class="skills__items">
+                          {sorted(sub.items).map((name) => (
+                            <li class="skills__item">
+                              <TechIcon name={name} size={18} />
+                              {name}
+                            </li>
+                          ))}
+                        </ul>
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : (
+                <ul class="skills__items">
+                  {(group.items ?? []).map((name) => (
+                    <li class="skills__item">
+                      <TechIcon name={name} size={18} />
+                      {name}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          ))
+        }
+      </ul>
+    </ResumeSection>
+
+    <ResumeSection label="Languages & Soft Skills" id="resume-soft" enterIndex={5}>
+      <div class="soft">
+        <div class="soft__col">
+          <h3 class="soft__title">Language skills</h3>
+          <span class="soft__langs">
+            <span class="muted">Mother tongue:</span>
+            <span class="soft__lang"><TechIcon name={languages.native} size={18} flag />{languages.native}</span>
+          </span>
+          <span class="soft__langs">
+            <span class="muted">Other:</span>
+            {languages.other.map((name) => (
+              <span class="soft__lang"><TechIcon name={name} size={18} flag />{name}</span>
+            ))}
+          </span>
+        </div>
+        <div class="soft__col">
+          <h3 class="soft__title">Core Skills</h3>
+          <span class="muted soft__items">
+            {softSkills.core.map((item) => (
+              <span class="soft__item">{item}</span>
+            ))}
+          </span>
+        </div>
+        <div class="soft__col">
+          <h3 class="soft__title">Work Ethic</h3>
+          <span class="muted soft__items">
+            {softSkills.workEthic.map((item) => (
+              <span class="soft__item">{item}</span>
+            ))}
+          </span>
+        </div>
+      </div>
+    </ResumeSection>
+
+    <ResumeSection label="Projects" id="resume-projects">
+      <div class="projects">
+        <p class="entry__text">{projectsSummary.text}</p>
+        <ul class="projects__links">
+          {
+            projectsSummary.links.map((link) => (
+              <li>
+                <LinkButton href={link.href} label={link.label} icon={link.icon} />
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </ResumeSection>
+  </div>
+</BaseLayout>
+
+<style>
+  .resume {
+    display: flex;
+    flex-direction: column;
+    gap: 64px;
+    padding: 72px 0 96px;
+  }
+
+  .resume__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--text);
+  }
+
+  .resume__heading {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .resume__subtitle {
+    font-size: 16px;
+    color: var(--muted);
+  }
+
+  .resume__about {
+    font-size: 17px;
+    line-height: 1.65;
+  }
+
+  .resume__about p + p {
+    margin-top: 14px;
+  }
+
+  /* ---------- Experience / education entries ---------- */
+  /* 44px logo column beside the entry (36px on phones). */
+  .entry {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--line);
+    scroll-margin-top: 24px;
+  }
+
+  .entry__body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .entry--edu {
+    padding: 18px 0;
+  }
+
+  .entry--edu .entry__body {
+    gap: 6px;
+  }
+
+  .entry__related {
+    display: flex;
+    margin-top: 6px;
+  }
+
+  /* "Friendly · Punctual · …": items never split, and no line starts or ends with a " · ".
+     Each item draws its separator before it, centred in a --sep-wide slot (equal space on both
+     sides). The item is pulled left by --sep and the gap between items is --sep, so mid-line the
+     separator sits exactly between two items, while at the start of a line it falls into the
+     clipped gutter left of the list and disappears. Lines can only end with an item. */
+  .soft__items {
+    --sep: 0.9em;
+
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: var(--sep);
+    overflow: hidden;
+  }
+
+  .soft__item {
+    margin-left: calc(-1 * var(--sep));
+    white-space: nowrap;
+  }
+
+  .soft__item::before {
+    content: '·' / '';
+    display: inline-block;
+    width: var(--sep);
+    text-align: center;
+  }
+
+  .entry:target .entry__title {
+    color: var(--accent);
+  }
+
+  .entry__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+  }
+
+  .entry__row--sub {
+    font-size: 15px;
+  }
+
+  .entry__row--sub strong {
+    font-weight: 600;
+  }
+
+  /* "Company · Location": the location draws its " · " before it, centred in a --sep slot.
+     It is pulled left by --sep and the gap is --sep, so on one line the dot sits between the two;
+     when the location wraps to its own line, the dot falls into the clipped gutter on the left
+     and disappears — no line starts or ends with a " · " (same technique as the soft skills). */
+  .entry__org {
+    --sep: 0.9em;
+
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: var(--sep);
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .entry__org-name {
+    min-width: 0;
+  }
+
+  .entry__org-loc {
+    margin-left: calc(-1 * var(--sep));
+    white-space: nowrap;
+  }
+
+  .entry__org-loc::before {
+    content: '·' / '';
+    display: inline-block;
+    width: var(--sep);
+    text-align: center;
+  }
+
+  .entry__title {
+    font-size: 19px;
+  }
+
+  .entry--edu .entry__title {
+    font-size: 18px;
+  }
+
+  /* period | · | duration in fixed character columns, so dates align across entries. */
+  .entry__dates {
+    display: inline-grid;
+    grid-template-columns: 19ch 1ch 11ch;
+    column-gap: 0.7ch;
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .entry__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  .entry__text {
+    margin-top: 4px;
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--muted);
+  }
+
+  .entry__field {
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  /* ---------- Skills: card grid (2 columns ≥640); Task Management and Familiar With span both ---------- */
+  .skills {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .skills__card {
+    min-width: 0;
+    padding: 16px 18px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+  }
+
+  .skills__card--wide {
+    grid-column: 1 / -1;
+  }
+
+  .skills__label {
+    display: block;
+    margin-bottom: 12px;
+  }
+
+  .skills__items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+  }
+
+  .skills__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  .skills__card--secondary .skills__item {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* Familiar With: each group's label sits above its sorted items (like every other skill card),
+     so the items get the card's full width and each group fits on one line from 1280px up
+     (the longest, "Design, 3D & Office", needs ~790px; beside a 168px label it had 638px). */
+  .skills__groups {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .skills__group {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+    padding: 10px 0;
+  }
+
+  .skills__group:first-child {
+    padding-top: 0;
+  }
+
+  .skills__group:last-child {
+    padding-bottom: 0;
+  }
+
+  .skills__group + .skills__group {
+    border-top: 1px dashed var(--line);
+  }
+
+  .skills__group-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  /* ---------- Languages & soft skills ---------- */
+  .soft {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  .soft__col {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* "Mother tongue: [flag] Armenian" / "Other: [flag] English [flag] Russian". */
+  .soft__langs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 10px;
+  }
+
+  .soft__lang {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  .soft__title {
+    margin-bottom: 4px;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  /* ---------- Projects ---------- */
+  .projects {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .projects .entry__text {
+    margin-top: 0;
+  }
+
+  .projects__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .projects__links > li {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  @media (max-width: 1023.98px) {
+    .resume {
+      gap: 48px;
+      padding: 48px 0 72px;
+    }
+  }
+
+  /* < 640: title/dates and company/links stack. */
+  @media (max-width: 639.98px) {
+    .entry__row {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .entry__dates {
+      margin-left: 0;
+    }
+
+    .entry__links {
+      margin-top: 2px;
+    }
+
+    .resume {
+      gap: 40px;
+      padding: 32px 0 48px;
+    }
+
+    .resume__download {
+      width: 100%;
+    }
+
+    .entry {
+      grid-template-columns: 36px minmax(0, 1fr);
+      gap: 12px;
+    }
+
+    /* Section label → content is the shared 16px (ResumeSection): the first entry drops its top
+       padding, and text that opens a section drops its first-line half-leading (Instrument Sans's
+       text box is 1.235em tall), so the gap is measured to the text itself. */
+    .entry:first-child {
+      padding-top: 0;
+    }
+
+    .resume__about > p:first-child,
+    .soft__col:first-child > .soft__title,
+    .projects > .entry__text:first-child {
+      margin-top: calc((1lh - 1.235em) / -2);
+    }
+
+    /* Long "Related: …" titles wrap onto a second line instead of being cut off. */
+    .entry__related :global(.link-btn) {
+      height: auto;
+      min-height: 36px;
+      padding-block: 7px;
+      white-space: normal;
+    }
+
+    .entry__related :global(.link-btn__label) {
+      overflow: visible;
+      white-space: normal;
+    }
+
+    .entry :global(.entry__logo) {
+      width: 36px;
+      height: 36px;
+    }
+
+    .skills {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .soft {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

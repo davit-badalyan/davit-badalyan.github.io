@@ -1,0 +1,327 @@
+---
+// Project sheet for Demos (detailLevel "card"): a native modal <dialog> holding one article per
+// demo (only the active one is shown). A sticky top bar holds prev / next ("Project N of 5") and
+// close; then the demo content (compact hero with the info card, player, screenshots — shared
+// with the demo's no-JS page). Prev / next cycle through the demos only, in grid order (5 → 1).
+// Opened by demo cards ([data-project-card][data-kind="card"]; their href is the fallback page),
+// by a #project=<slug> link, and on load when the URL has that hash. Opening adds a history entry
+// through Astro's router, so Back closes it.
+import type { Project } from '../data/personal';
+import DemoContent from './DemoContent.astro';
+import Icon from './Icon.astro';
+
+interface Props {
+  /** The demos, in grid order (one article each). */
+  projects: Project[];
+}
+
+const { projects } = Astro.props;
+const titleId = (project: Project) => `sheet-title-${project.slug}`;
+// Prev / next order: the demos, as in the grid.
+const order = projects.map((project) => ({ slug: project.slug, title: project.title }));
+---
+
+{
+  projects.length > 0 && (
+    <dialog class="sheet" aria-labelledby={titleId(projects[0])} data-lightbox data-order={JSON.stringify(order)}>
+      <div class="sheet__scroll" data-lightbox-scroll>
+        <div class="sheet__bar">
+          <div class="sheet__nav">
+            <button type="button" class="sheet__btn" aria-label="Previous project" data-lightbox-prev>
+              <Icon name="chevron-left" />
+            </button>
+            <button type="button" class="sheet__btn" aria-label="Next project" data-lightbox-next>
+              <Icon name="chevron-right" />
+            </button>
+            <span class="sheet__count" data-sheet-count></span>
+          </div>
+          <button type="button" class="sheet__btn" aria-label="Close" data-lightbox-close>
+            <Icon name="close" />
+          </button>
+        </div>
+
+        {projects.map((project) => (
+          <article class="sheet__project" data-lightbox-project={project.slug} data-title-id={titleId(project)} hidden>
+            <DemoContent project={project} deferred compact headingLevel="h2" titleId={titleId(project)} idPrefix="sheet" />
+          </article>
+        ))}
+      </div>
+    </dialog>
+  )
+}
+
+<style>
+  /* margin: auto centers the modal (the global reset removes the browser default). */
+  .sheet {
+    width: min(1120px, calc(100vw - 48px));
+    max-width: none;
+    max-height: calc(100dvh - 48px);
+    margin: auto;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    background: var(--bg);
+    color: var(--text);
+    box-shadow: 0 30px 80px -20px rgb(0 0 0 / 50%);
+  }
+
+  .sheet[open] {
+    display: flex;
+    animation: dialog-in 220ms var(--ease-out);
+  }
+
+  .sheet::backdrop {
+    background: rgb(14 16 20 / 60%);
+    animation: fade 220ms ease;
+  }
+
+  /* The whole sheet scrolls internally; the top bar sticks. */
+  .sheet__scroll {
+    width: 100%;
+    max-height: calc(100dvh - 48px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .sheet__bar {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+  }
+
+  .sheet__nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  /* 40px buttons; ::before widens the hit area to 44px. */
+  .sheet__btn {
+    position: relative;
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  .sheet__btn::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+  }
+
+  .sheet__count {
+    margin-left: 8px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .sheet__project[hidden] {
+    display: none;
+  }
+
+  /* bar → eyebrow 28, sides 24, end 24 (phones 24 / 14 / 16). */
+  .sheet__project {
+    padding: 28px 24px 24px;
+  }
+
+  /* < 640: full screen. */
+  @media (max-width: 639.98px) {
+    .sheet {
+      width: 100vw;
+      max-width: none;
+      height: 100dvh;
+      max-height: none;
+      border: 0;
+      border-radius: 0;
+    }
+
+    .sheet__scroll {
+      max-height: none;
+      height: 100%;
+    }
+
+    .sheet__project {
+      padding: 24px 14px 16px;
+    }
+  }
+</style>
+
+<script>
+  import { navigate } from 'astro:transitions/client';
+  import { trapFocus } from '../utils/dialog';
+
+  type Lightbox = HTMLDialogElement & { lightboxReady?: boolean };
+  type OrderItem = { slug: string; title: string };
+
+  const HASH_PREFIX = '#project=';
+  /** True when the current #project= entry was pushed by us (so closing = history.back()). */
+  let pushed = false;
+  let returnFocus: HTMLElement | null = null;
+  /**
+   * Set before closing for a page swap: that close must not touch the history. The "close"
+   * event fires asynchronously, so the close handler itself reads and clears this flag.
+   */
+  let skipHistory = false;
+
+  const dialogEl = () => document.querySelector<Lightbox>('[data-lightbox]');
+  const articles = (dialog: HTMLDialogElement) =>
+    Array.from(dialog.querySelectorAll<HTMLElement>('[data-lightbox-project]'));
+  const order = (dialog: HTMLDialogElement): OrderItem[] => {
+    try {
+      return JSON.parse(dialog.dataset.order ?? '[]') as OrderItem[];
+    } catch {
+      return [];
+    }
+  };
+  const slugFromHash = () => (location.hash.startsWith(HASH_PREFIX) ? decodeURIComponent(location.hash.slice(HASH_PREFIX.length)) : '');
+  const current = (dialog: HTMLDialogElement) => articles(dialog).find((article) => !article.hidden)?.dataset.lightboxProject ?? '';
+  const cardFor = (slug: string) => document.querySelector<HTMLElement>(`[data-project-card][data-slug="${CSS.escape(slug)}"]`);
+
+  /** Neighbour in grid order (wrapping). */
+  function neighbour(dialog: HTMLDialogElement, slug: string, delta: number): OrderItem | undefined {
+    const list = order(dialog);
+    const index = list.findIndex((item) => item.slug === slug);
+    return index < 0 ? undefined : list[(index + delta + list.length) % list.length];
+  }
+
+  /** Top bar: "Project N of 11" and prev / next labels naming their targets. */
+  function updateBar(dialog: HTMLDialogElement, slug: string) {
+    const list = order(dialog);
+    const count = dialog.querySelector<HTMLElement>('[data-sheet-count]');
+    if (count) count.textContent = `Project ${list.findIndex((item) => item.slug === slug) + 1} of ${list.length}`;
+    dialog.querySelector('[data-lightbox-prev]')?.setAttribute('aria-label', `Previous project: ${neighbour(dialog, slug, -1)?.title ?? ''}`);
+    dialog.querySelector('[data-lightbox-next]')?.setAttribute('aria-label', `Next project: ${neighbour(dialog, slug, 1)?.title ?? ''}`);
+  }
+
+  /** Shows a project inside the dialog (opening it if needed). Returns false for unknown slugs. */
+  function show(dialog: HTMLDialogElement, slug: string): boolean {
+    const target = articles(dialog).find((article) => article.dataset.lightboxProject === slug);
+    if (!target) return false;
+    articles(dialog).forEach((article) => {
+      const active = article === target;
+      if (!active && !article.hidden) article.querySelector('[data-player]')?.dispatchEvent(new Event('player:deactivate'));
+      article.hidden = !active;
+    });
+    dialog.setAttribute('aria-labelledby', target.dataset.titleId ?? '');
+    updateBar(dialog, slug);
+    if (!dialog.open) dialog.showModal();
+    dialog.querySelector('[data-lightbox-scroll]')?.scrollTo({ top: 0 });
+    target.querySelector('[data-player]')?.dispatchEvent(new Event('player:activate'));
+    return true;
+  }
+
+  function hide(dialog: HTMLDialogElement) {
+    if (dialog.open) dialog.close(); // cleanup runs in the "close" listener
+  }
+
+  /**
+   * Runs however the dialog closed (button, Esc, backdrop, Back, or Chrome closing it natively
+   * on a repeated Esc): stop the video, return focus, and leave no #project= in the URL —
+   * by undoing our own history entry, or by just dropping the hash.
+   */
+  function onClosed(dialog: HTMLDialogElement) {
+    const slug = current(dialog);
+    articles(dialog).forEach((article) => article.querySelector('[data-player]')?.dispatchEvent(new Event('player:deactivate')));
+    const leaving = skipHistory;
+    skipHistory = false;
+    if (!leaving) (returnFocus ?? cardFor(slug))?.focus();
+    returnFocus = null;
+    if (slugFromHash() && !leaving) {
+      if (pushed) history.back();
+      else history.replaceState(history.state, '', location.pathname + location.search);
+    }
+    pushed = false;
+  }
+
+  /** Close from the UI (button, Esc, backdrop). */
+  function requestClose(dialog: HTMLDialogElement) {
+    hide(dialog);
+  }
+
+  /** Prev / next through the demos (wrapping); the sheet never leaves for another page. */
+  function step(dialog: HTMLDialogElement, delta: number) {
+    const target = neighbour(dialog, current(dialog), delta);
+    if (!target) return;
+    show(dialog, target.slug);
+    void navigate(HASH_PREFIX + encodeURIComponent(target.slug), { history: 'replace' });
+  }
+
+  /** Makes the dialog match the URL: #project=<slug> open, anything else closed. */
+  function syncFromHash() {
+    const dialog = dialogEl();
+    if (!dialog) return;
+    const slug = slugFromHash();
+    if (slug && current(dialog) === slug && dialog.open) return;
+    if (slug && show(dialog, slug)) return;
+    hide(dialog);
+  }
+
+  function initLightbox() {
+    const dialog = dialogEl();
+    if (!dialog || dialog.lightboxReady) return;
+    dialog.lightboxReady = true;
+    pushed = false;
+    trapFocus(dialog);
+
+    dialog.querySelector('[data-lightbox-prev]')?.addEventListener('click', () => step(dialog, -1));
+    dialog.querySelector('[data-lightbox-next]')?.addEventListener('click', () => step(dialog, 1));
+    dialog.querySelector('[data-lightbox-close]')?.addEventListener('click', () => requestClose(dialog));
+    dialog.addEventListener('cancel', (event) => {
+      event.preventDefault();
+      requestClose(dialog);
+    });
+    dialog.addEventListener('close', () => onClosed(dialog));
+    // A click on the dialog itself (not its content) is a click on the backdrop.
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) requestClose(dialog);
+    });
+
+    document.querySelectorAll<HTMLAnchorElement>('[data-project-card][data-kind="card"]').forEach((card) => {
+      card.addEventListener('click', (event) => {
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+        event.preventDefault(); // the href is the no-JS page; with JS the sheet opens instead
+        const slug = card.dataset.slug ?? '';
+        returnFocus = card;
+        if (!show(dialog, slug)) return;
+        if (slugFromHash() === slug) return;
+        pushed = true;
+        void navigate(HASH_PREFIX + encodeURIComponent(slug));
+      });
+    });
+
+    syncFromHash(); // deep link: /#project=<slug>
+  }
+
+  window.addEventListener('hashchange', syncFromHash);
+  window.addEventListener('popstate', () => queueMicrotask(syncFromHash));
+  document.addEventListener('astro:before-swap', () => {
+    const dialog = dialogEl();
+    if (dialog?.open) {
+      skipHistory = true;
+      dialog.close();
+    }
+    pushed = false;
+  });
+
+  initLightbox();
+  document.addEventListener('astro:page-load', initLightbox);
+</script>

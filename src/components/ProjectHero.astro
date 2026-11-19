@@ -1,0 +1,406 @@
+---
+// Project start section, shared by case study pages, demo pages and the project sheet:
+// · hero — case studies ≥1024: eyebrow + title (5fr) | overview (7fr), tops aligned, 56px apart;
+//   demos (page and sheet) and everything below 1024: stacked — eyebrow, title, then the overview
+//   (max 860px);
+// · details card (40px below; 28 on phones) — ≥1024 ONE grid of N equal columns (N = facts):
+//   row 1 the facts (Role, Context, Client, Platform, Year, Related), row 2 the zones (Tech stack
+//   spans the columns the other zones leave free; AI tools / Links / Inspired by span one each),
+//   so every vertical line of row 2 continues one of row 1. Below 1024 the cells wrap (facts
+//   160px+, zones full width). Separators are cell shadows clipped by the card.
+// `compact` is the sheet version: a 40px title and a 17px overview.
+import type { Project, RelatedEntry } from '../data/personal';
+import { clientLogos } from '../data/site';
+import { kindLabel } from '../utils/personal';
+import { withBase } from '../utils/paths';
+import Logo from './Logo.astro';
+import PlatformIcons from './PlatformIcons.astro';
+import ProjectLinks from './ProjectLinks.astro';
+import TechChip from './TechChip.astro';
+
+interface Props {
+  project: Project;
+  compact?: boolean;
+  /** h1 on project pages, h2 in the sheet. */
+  headingLevel?: 'h1' | 'h2';
+  /** id of the title (the sheet's dialog is labelled by it). */
+  titleId?: string;
+  class?: string;
+  style?: string;
+}
+
+const { project, compact = false, headingLevel = 'h1', titleId, class: className, style } = Astro.props;
+const Heading = headingLevel;
+const isDemo = project.detailLevel !== 'case-study';
+const { credits = [] } = project;
+const hasLinks = Object.keys(project.links).length > 0;
+
+// Related Resume entries. One that is also the client (a test assignment for a studio I then
+// joined) makes the Client cell itself the link instead of repeating the name under Related.
+const clientEntry = project.related?.find((entry) => entry.company === project.client);
+const related = (project.related ?? []).filter((entry) => entry !== clientEntry);
+
+// A client that is not a Resume entry (Voodoo, Tripledot) still gets its logo (site.ts clientLogos).
+const clientLogo = project.client && !clientEntry ? clientLogos[project.client] : undefined;
+
+type Fact = { label: string; value: string; platform?: boolean; link?: RelatedEntry; logo?: string };
+const facts: Fact[] = [
+  { label: 'Role', value: project.role },
+  { label: 'Context', value: project.context },
+  ...(project.client ? [{ label: 'Client', value: project.client, link: clientEntry, logo: clientLogo }] : []),
+  { label: 'Platform', value: project.platform, platform: true },
+  { label: 'Year', value: project.year },
+];
+const entryName = (entry: RelatedEntry) => entry.short ?? entry.company;
+const zones = [
+  'tech',
+  ...(project.aiTools.length > 0 ? ['ai'] : []),
+  ...(hasLinks ? ['links'] : []),
+  ...(credits.length > 0 ? ['credits'] : []),
+];
+// Columns of the details grid = number of facts; the tech stack takes the ones left over.
+const columns = facts.length + (related.length > 0 ? 1 : 0);
+const techSpan = Math.max(1, columns - (zones.length - 1));
+---
+
+<div class:list={['start', { 'start--compact': compact }, className]} style={style}>
+  <div class:list={['start__hero', { 'start__hero--split': !isDemo && !compact }]}>
+    <div class="start__head">
+      <p class:list={['start__eyebrow', { 'start__eyebrow--demo': isDemo }]}>{kindLabel(project)} · {project.context}</p>
+      <Heading class="start__title" id={titleId}>{project.title}</Heading>
+    </div>
+    <p class="start__overview">{project.overview}</p>
+  </div>
+
+  <section class="start__card" style={`--cols: ${columns}`} aria-label="Project details">
+    <dl class="start__facts">
+      {
+        facts.map(({ label, value, platform, link, logo }) => (
+          <div class:list={['start__cell start__fact', { 'start__fact--link': link }]}>
+            <dt class="label">{label}</dt>
+            <dd class="start__value">
+              {platform && <PlatformIcons platform={value} />}
+              {logo && <Logo slug={logo} size={20} />}
+              {link ? (
+                <a class="start__related start__related--cell" href={withBase(link.href)} title={`${link.label} ${link.company}`}>
+                  <Logo slug={link.logo} size={20} />
+                  <span>{value}</span>
+                </a>
+              ) : (
+                <span title={value}>{value}</span>
+              )}
+            </dd>
+          </div>
+        ))
+      }
+      {
+        related.length > 0 && (
+          <div class:list={['start__cell start__fact', { 'start__fact--link': related.length === 1 }]}>
+            <dt class="label">Related</dt>
+            {related.map((entry) => (
+              <dd class="start__value">
+                <a
+                  class:list={['start__related', { 'start__related--cell': related.length === 1 }]}
+                  href={withBase(entry.href)}
+                  title={`${entry.label} ${entry.company}`}
+                >
+                  <Logo slug={entry.logo} size={20} />
+                  <span>{entryName(entry)}</span>
+                </a>
+              </dd>
+            ))}
+          </div>
+        )
+      }
+    </dl>
+
+    {
+      zones.map((zone) => (
+        <div
+          class:list={['start__cell start__zone', `start__zone--${zone}`]}
+          style={zone === 'tech' ? `--span: ${techSpan}` : undefined}
+        >
+          {zone === 'tech' && (
+            <>
+              <span class="label">Tech stack</span>
+              <ul class="start__chips">
+                {project.tech.map((name) => (
+                  <TechChip name={name} />
+                ))}
+              </ul>
+            </>
+          )}
+          {zone === 'ai' && (
+            <>
+              <span class="label">AI tools</span>
+              <ul class="start__chips">
+                {project.aiTools.map((name) => (
+                  <TechChip name={name} />
+                ))}
+              </ul>
+            </>
+          )}
+          {zone === 'links' && (
+            <>
+              <span class="label">Links</span>
+              <ProjectLinks project={project} class="start__links" />
+            </>
+          )}
+          {zone === 'credits' && (
+            <>
+              <span class="label">Inspired by</span>
+              <ProjectLinks links={credits} class="start__links" />
+            </>
+          )}
+        </div>
+      ))
+    }
+  </section>
+</div>
+
+<style>
+  /* ---------- Hero: eyebrow → title 12, title → overview 24 (stacked) ---------- */
+  /* Case studies ≥1024: title block | overview side by side, tops aligned. */
+  @media (min-width: 1024px) {
+    .start__hero--split {
+      display: grid;
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      column-gap: 56px;
+      align-items: start;
+    }
+
+    .start__hero--split .start__overview {
+      max-width: none;
+      margin-top: 0;
+    }
+  }
+
+
+  .start__eyebrow {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.5;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    text-align: left;
+  }
+
+  .start__eyebrow--demo {
+    color: var(--demo);
+  }
+
+  .start__title {
+    margin-top: 12px;
+    font-size: 48px;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+  }
+
+  .start--compact .start__title {
+    font-size: 40px;
+    line-height: 1.08;
+    letter-spacing: -0.025em;
+  }
+
+  .start__overview {
+    max-width: 860px;
+    margin-top: 24px;
+    font-size: 18px;
+    line-height: 1.65;
+    color: var(--text);
+    text-align: justify;
+    hyphens: auto;
+  }
+
+  .start--compact .start__overview {
+    font-size: 17px;
+  }
+
+  /* ---------- Details card (hero → card 40) ---------- */
+  /* Equal columns; a column only grows past its share when a value would not fit (e.g. a logo +
+     "ArmNomads Games" at 1024px). Row 2 uses the same tracks, so its lines still continue row 1's. */
+  .start__card {
+    display: grid;
+    grid-template-columns: repeat(var(--cols), minmax(min-content, 1fr));
+    margin-top: 40px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: var(--surface);
+  }
+
+  /* The facts list takes part in the card's grid / flex layout directly. */
+  .start__facts {
+    display: contents;
+  }
+
+  /* Each cell draws its separators as shadows to the left and above; the card clips the ones
+     on its outer edges, so no edge is ever doubled and wrapped lines never leave a gap. */
+  .start__cell {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    box-shadow:
+      -1px 0 0 var(--line),
+      0 -1px 0 var(--line);
+  }
+
+  .start__fact {
+    gap: 8px;
+    padding: 16px 20px;
+  }
+
+  .start__zone {
+    gap: 12px;
+    padding: 18px 20px 20px;
+  }
+
+  .start__zone--tech {
+    grid-column: span var(--span, 1);
+  }
+
+  .start__value {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    font-size: 15px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .start__value :global(svg) {
+    flex: none;
+  }
+
+  .start__value > span:last-child,
+  .start__related > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* The whole Related cell is the link (the ::before covers the cell). */
+  .start__fact--link {
+    position: relative;
+  }
+
+  .start__related {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    color: var(--text);
+    transition: color 200ms ease;
+  }
+
+  /* One link in the cell: the whole cell is the target. Several (stacked, 8px apart): each line
+     gets its own 44px-tall target. */
+  .start__related--cell::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  .start__related:not(.start__related--cell) {
+    position: relative;
+  }
+
+  .start__related:not(.start__related--cell)::before {
+    content: '';
+    position: absolute;
+    inset: -10px 0;
+  }
+
+
+
+  .start__related:hover {
+    opacity: 1;
+    color: var(--accent);
+  }
+
+  /* A whole-cell link shows its focus ring on the cell; stacked links keep their own. */
+  .start__related--cell:focus-visible {
+    outline: none;
+  }
+
+  .start__fact--link:has(.start__related--cell:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: -4px;
+    border-radius: 6px;
+  }
+
+  .start__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Links stack inside their cell ≥1024, sit in a row below. */
+  .start__zone :global(.start__links) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  /* < 1024: the card wraps its cells (facts 160px+, zones full width). */
+  @media (max-width: 1023.98px) {
+    .start__title {
+      font-size: 42px;
+    }
+
+    .start__card {
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    /* A cell never shrinks below its content: a long value moves to the next line (where the
+       cells grow to fill it) instead of being cut. */
+    .start__fact {
+      flex: 1 1 160px;
+      min-width: min-content;
+    }
+
+    .start__zone {
+      flex: 1 1 100%;
+    }
+
+    .start__zone :global(.start__links) {
+      flex-direction: row;
+    }
+  }
+
+  @media (max-width: 639.98px) {
+    .start__title {
+      font-size: 34px;
+    }
+
+    .start--compact .start__title {
+      font-size: 26px;
+    }
+
+    /* Phones: left-aligned like every other paragraph (global.css), no hyphenation. */
+    .start__overview {
+      text-align: left;
+      hyphens: manual;
+    }
+
+    .start__overview,
+    .start--compact .start__overview {
+      font-size: 16px;
+    }
+
+    .start__card {
+      margin-top: 28px;
+    }
+
+    .start__fact {
+      flex-basis: 140px;
+      padding: 12px 16px;
+    }
+
+    .start__zone {
+      padding: 16px;
+    }
+  }
+</style>

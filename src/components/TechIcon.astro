@@ -1,0 +1,155 @@
+---
+// Icon for a tech / tool / social / flag name, from src/data/icons.ts (iconFor). Always decorative.
+// Render order:
+// · svg → inline <svg>; "mono" icons use currentColor and are drawn in --text (light/dark),
+//   or in the surrounding text colour with `inherit` (e.g. footer links);
+// · image → <img> (a PNG in public/images/icons/), size × size;
+// · monogram → a tile (its own colour with white text, or --text with --bg text);
+// · unknown name → nothing (the caller still shows the text).
+// `flag`: a 3:2 flag, `size` wide, radius 2 with a 1px inner outline.
+// ids inside an svg (gradients, clip paths) get a per-instance suffix, so repeated icons on one
+// page never point at a copy that sits in a hidden element.
+import { iconFor } from '../data/icons';
+import { withBase } from '../utils/paths';
+
+interface Props {
+  name: string;
+  size?: number;
+  /** Mono icons take the surrounding text colour instead of --text. */
+  inherit?: boolean;
+  /** Render as a 3:2 flag. */
+  flag?: boolean;
+  class?: string;
+}
+
+const { name, size = 16, inherit = false, flag = false, class: className } = Astro.props;
+const icon = iconFor(name);
+
+const store = globalThis as { __techIconCount?: number };
+const counter = (store.__techIconCount = (store.__techIconCount ?? 0) + 1);
+const uniqueIds = (svg: string) => {
+  const ids = [...svg.matchAll(/id="([^"]+)"/g)].map((match) => match[1]);
+  return ids.reduce(
+    (body, id) =>
+      body
+        .replaceAll(`id="${id}"`, `id="${id}-${counter}"`)
+        .replaceAll(`url(#${id})`, `url(#${id}-${counter})`)
+        .replaceAll(`href="#${id}"`, `href="#${id}-${counter}"`),
+    svg,
+  );
+};
+const height = flag ? Math.round((size * 2) / 3) : size;
+const monoStyle =
+  icon && !icon.svg && !icon.image
+    ? [
+        `width: ${size}px`,
+        `height: ${size}px`,
+        `font-size: ${Math.round(size * 0.5 * 10) / 10}px`,
+        icon.monogramColor ? `background: ${icon.monogramColor}; color: #fff` : '',
+      ]
+        .filter(Boolean)
+        .join('; ')
+    : '';
+const svgBody = icon?.svg && icon.viewBox ? uniqueIds(icon.svg) : null;
+---
+
+{
+  svgBody && flag && (
+    <span class:list={['tech-flag', className]} style={`width: ${size}px; height: ${height}px`} aria-hidden="true">
+      <svg
+        class:list={['tech-icon', { 'tech-icon--mono': icon?.mono && !inherit }]}
+        width={size}
+        height={height}
+        viewBox={icon?.viewBox ?? undefined}
+        preserveAspectRatio="xMidYMid slice"
+        aria-hidden="true"
+        focusable="false"
+        set:html={svgBody}
+      />
+    </span>
+  )
+}
+{
+  svgBody && !flag && (
+    <svg
+      class:list={['tech-icon', { 'tech-icon--mono': icon?.mono && !inherit }, className]}
+      width={size}
+      height={height}
+      viewBox={icon?.viewBox ?? undefined}
+      aria-hidden="true"
+      focusable="false"
+      set:html={svgBody}
+    />
+  )
+}
+{
+  icon && !icon.svg && icon.image && (
+    <img
+      class:list={['tech-icon tech-icon--img', className]}
+      src={withBase(icon.image)}
+      width={size}
+      height={size}
+      loading="lazy"
+      decoding="async"
+      draggable="false"
+      alt=""
+    />
+  )
+}
+{
+  icon && !icon.svg && !icon.image && icon.monogram && (
+    <span class:list={['tech-icon tech-monogram', className]} style={monoStyle} aria-hidden="true">
+      {icon.monogram}
+    </span>
+  )
+}
+
+<style>
+  .tech-icon {
+    display: block;
+    flex: none;
+  }
+
+  .tech-icon--mono {
+    color: var(--text);
+  }
+
+  .tech-icon--img {
+    object-fit: contain;
+  }
+
+  .tech-monogram {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    background: var(--text);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--bg);
+  }
+
+  /* 3:2 flag: clipped to radius 2, with a 1px inner outline drawn over the colours. */
+  .tech-flag {
+    position: relative;
+    display: block;
+    flex: none;
+    overflow: hidden;
+    border-radius: 2px;
+  }
+
+  .tech-flag > :global(svg) {
+    width: 100%;
+    height: 100%;
+  }
+
+  .tech-flag::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 12%);
+  }
+</style>

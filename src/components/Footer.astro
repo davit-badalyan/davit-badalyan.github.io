@@ -1,0 +1,126 @@
+---
+import { profile, socials } from '../data/site';
+import TechIcon from './TechIcon.astro';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer" transition:persist="site-footer">
+  <div class="site-footer__top">
+    <span class="site-footer__email">
+      <TechIcon name="Email" size={16} inherit class="site-footer__icon" />
+      <span>Email:</span>
+      <a class="text-link site-footer__link" href={`mailto:${profile.email}`}>{profile.email}</a>
+    </span>
+    <ul class="site-footer__socials" aria-label="Social profiles">
+      {
+        socials.map(({ name, href }) => (
+          <li>
+            <a class="text-link site-footer__link site-footer__social" href={href}>
+              <TechIcon name={name} size={16} inherit />
+              {name}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+  <p class="site-footer__copy">© {year} {profile.name}</p>
+</footer>
+
+<style>
+  /* Equal visible spacing (one token) around every row: top border → row 1 text,
+     row 1 text → divider, divider → © text, © text → end of footer (and, on phones,
+     between the stacked email line and links row).
+     Each line-height equals the rendered text height (Instrument Sans ascent + descent is
+     1.22em, which browsers round to whole pixels: 18px at 14px, 16px at 13px), so the line
+     box is exactly the visible text and the spacing is just the token. */
+  .site-footer {
+    --footer-space: 24px;
+
+    display: flex;
+    flex-direction: column;
+    gap: var(--footer-space);
+    margin-top: 24px;
+    padding: var(--footer-space) 0;
+    border-top: 1px solid var(--line);
+    font-size: 14px;
+    line-height: 18px;
+    color: var(--muted);
+  }
+
+  .site-footer__top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--footer-space) 24px;
+  }
+
+  .site-footer__email {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0 6px;
+  }
+
+  .site-footer__socials {
+    display: flex;
+    gap: 24px;
+  }
+
+  /* Flex items, so the inline-flex links leave no extra line-box space (the row stays 18px). */
+  .site-footer__socials li {
+    display: flex;
+  }
+
+  /* 16px icons sit inside the 18px line, so they add no height. Mono icons take the colour of
+     their text (muted before "Email:", the link colour in the links). */
+  .site-footer__email :global(.site-footer__icon) {
+    margin-right: 2px;
+  }
+
+  .site-footer__link.site-footer__social {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Touch targets ≥44px (18px line + 2 × 14px = 46px) that add no visible space: the
+     vertical padding is cancelled by equal negative margins, so the layout only sees the
+     text line. */
+  .site-footer__link {
+    display: inline-block;
+    padding-block: 14px;
+    margin-block: -14px;
+  }
+
+  .site-footer__copy {
+    padding-top: var(--footer-space);
+    border-top: 1px solid var(--line);
+    font-size: 13px;
+    line-height: 16px;
+    text-align: center;
+  }
+
+  /* Phones: everything centered and stacked, same rule between every line group. */
+  @media (max-width: 639.98px) {
+    .site-footer {
+      --footer-space: 20px;
+    }
+
+    .site-footer__top {
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .site-footer__email {
+      justify-content: center;
+    }
+
+    .site-footer__socials {
+      justify-content: center;
+    }
+  }
+</style>

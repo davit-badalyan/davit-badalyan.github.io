@@ -1,0 +1,65 @@
+---
+// "Download CV" button: optional download arrow, label, and the file format in a lighter weight
+// ("· PDF"). No file size: browsers and Finder count KB differently, so no number matches both.
+// Primary with the arrow on Resume / Contact; secondary without it next to "Explore" on Work.
+import { profile } from '../data/site';
+import { withBase } from '../utils/paths';
+import Icon from './Icon.astro';
+
+interface Props {
+  variant?: 'primary' | 'secondary';
+  icon?: boolean;
+  /** Narrow phone layouts (a half-width button): "PDF" moves to a smaller second line. */
+  stack?: boolean;
+  class?: string;
+}
+
+const { variant = 'primary', icon = true, stack = false, class: className } = Astro.props;
+---
+
+<a class:list={['btn cv-btn', `btn--${variant}`, { 'cv-btn--stack': stack }, className]} href={withBase(profile.cvPath)} download>
+  {icon && <Icon name="download" />}
+  <span class="cv-btn__label">Download CV</span>{' '}
+  <span class="cv-btn__meta"><span class="cv-btn__dot" aria-hidden="true">·</span>PDF</span>
+</a>
+
+<style>
+  .cv-btn__label,
+  .cv-btn__meta {
+    white-space: nowrap;
+  }
+
+  /* "Download CV · PDF": the button's 10px gap (meant for the icon) is cancelled before the
+     meta, and the dot gets the same padding on both sides, so the space before and after it is
+     equal. */
+  .cv-btn__meta {
+    display: inline-flex;
+    align-items: baseline;
+    margin-left: -10px;
+    font-weight: 400;
+    opacity: 0.78;
+  }
+
+  .cv-btn__dot {
+    padding-inline: 0.4em;
+  }
+
+  /* < 640, stacked: "Download CV" over a smaller "PDF", inside the same 48px button. */
+  @media (max-width: 639.98px) {
+    .cv-btn--stack {
+      flex-direction: column;
+      gap: 1px;
+      padding-block: 5px;
+    }
+
+    .cv-btn--stack .cv-btn__meta {
+      margin-left: 0;
+      font-size: 11.5px;
+      line-height: 1.2;
+    }
+
+    .cv-btn--stack .cv-btn__dot {
+      display: none;
+    }
+  }
+</style>

@@ -1,0 +1,265 @@
+---
+// "Gallery" section: the h2, then
+// · "Videos" — h3 + a segmented control (Highlights · Full; a tab only for a non-empty list)
+//   that picks the player's playlist, then the player card;
+// · "Screenshots" (32px below; only when there are screenshots) — h3, then the grid
+//   (4 / 3 / 2 columns; a click opens the image viewer).
+// Without JavaScript the tabs are hidden (the player shows its first list).
+import type { Project } from '../data/personal';
+import { mediaUrl } from '../utils/personal';
+import Icon from './Icon.astro';
+import MediaStage from './MediaStage.astro';
+import VideoPlayer from './VideoPlayer.astro';
+
+interface Props {
+  project: Project;
+  /** In the sheet: no video bytes until the sheet shows this project. */
+  deferred?: boolean;
+  /** Unique per page: heading, tab and panel ids and the viewer group. */
+  idPrefix: string;
+  headingLevel?: 'h2' | 'h3';
+  class?: string;
+  style?: string;
+}
+
+const { project, deferred = false, idPrefix, headingLevel = 'h2', class: className, style } = Astro.props;
+const Heading = headingLevel;
+const SubHeading = headingLevel === 'h2' ? 'h3' : 'h4';
+const { clips, full, screenshots } = project.media;
+const id = (suffix: string) => `${idPrefix}-${project.slug}-${suffix}`;
+const hasVideo = clips.length + full.length > 0;
+const tabs = [
+  { key: 'highlights', label: 'Highlights', count: clips.length },
+  { key: 'full', label: 'Full', count: full.length },
+].filter((tab) => tab.count > 0);
+const firstKey = tabs[0]?.key;
+---
+
+{
+  (hasVideo || screenshots.length > 0) && (
+    <section class:list={['gallery', className]} style={style} aria-labelledby={id('gallery')} data-gallery>
+      <Heading class="gallery__title" id={id('gallery')}>
+        Gallery
+      </Heading>
+
+      {hasVideo && (
+        <div class="gallery__block">
+          <div class="gallery__sub">
+            <SubHeading class="gallery__subtitle" id={id('videos-title')}>
+              Videos
+            </SubHeading>
+            <div class="seg gallery__tabs" role="tablist" aria-labelledby={id('videos-title')} data-gallery-tabs>
+              {tabs.map((tab) => (
+                <button
+                  type="button"
+                  role="tab"
+                  id={id(`tab-${tab.key}`)}
+                  class="seg__item"
+                  aria-selected={tab.key === firstKey ? 'true' : 'false'}
+                  aria-controls={id('videos')}
+                  tabindex={tab.key === firstKey ? '0' : '-1'}
+                  data-gallery-tab={tab.key}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div id={id('videos')} role="tabpanel" aria-labelledby={id(`tab-${firstKey}`)} data-gallery-videos>
+            <VideoPlayer project={project} deferred={deferred} portraitStage />
+          </div>
+        </div>
+      )}
+
+      {screenshots.length > 0 && (
+        <div class="gallery__block">
+          <div class="gallery__sub">
+            <SubHeading class="gallery__subtitle" id={id('shots-title')}>
+              Screenshots
+            </SubHeading>
+          </div>
+          <ul class="gallery__grid" aria-labelledby={id('shots-title')}>
+            {screenshots.map((shot, index) => (
+              <li>
+                <button
+                  type="button"
+                  class="gallery__shot"
+                  aria-label={`Open screenshot ${index + 1} of ${screenshots.length}`}
+                  data-viewer-item
+                  data-viewer-group={id('shots')}
+                  data-viewer-title={project.title}
+                  data-src={mediaUrl(project, shot.src)}
+                  data-width={shot.width}
+                  data-height={shot.height}
+                  data-alt={`${project.title} — screenshot ${index + 1}`}
+                >
+                  <MediaStage backdrop={mediaUrl(project, shot.src)} ar={shot.width / shot.height}>
+                    <img
+                      src={mediaUrl(project, shot.src)}
+                      width={shot.width}
+                      height={shot.height}
+                      sizes="(min-width: 1024px) 280px, (min-width: 640px) 30vw, 45vw"
+                      loading="lazy"
+                      decoding="async"
+                      draggable="false"
+                      alt={`${project.title} — screenshot ${index + 1}`}
+                    />
+                    <span slot="overlay" class="gallery__expand" aria-hidden="true">
+                      <Icon name="expand" size={14} />
+                    </span>
+                  </MediaStage>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <noscript>
+        <style>
+          [data-gallery-tabs] {
+            visibility: hidden !important;
+          }
+        </style>
+      </noscript>
+    </section>
+  )
+}
+
+<style>
+  /* Divider, 40 to the h2 (32 on phones; no extra margins on the heading), h2 → Videos 24,
+     sub-header → content 16, Videos → Screenshots 32. */
+  .gallery {
+    padding-top: var(--gallery-gap, 40px);
+    border-top: 1px solid var(--line);
+  }
+
+  .gallery__title {
+    margin-bottom: 24px;
+    font-size: 22px;
+    line-height: 28px;
+  }
+
+  .gallery__block + .gallery__block {
+    margin-top: 32px;
+  }
+
+  .gallery__sub {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px 16px;
+    min-height: 40px;
+    margin-bottom: 16px;
+  }
+
+  .gallery__subtitle {
+    font-size: 17px;
+    font-weight: 500;
+    line-height: 24px;
+  }
+
+  .gallery__tabs {
+    max-width: 100%;
+  }
+
+  .gallery__grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .gallery__shot {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    transition: transform 260ms var(--ease-out);
+  }
+
+  .gallery__shot:hover {
+    opacity: 1;
+  }
+
+  @media (hover: hover) {
+    .gallery__shot:hover {
+      transform: translateY(-3px);
+    }
+  }
+
+  .gallery__expand {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: rgb(14 16 20 / 65%);
+    color: #fff;
+  }
+
+  @media (max-width: 1023.98px) {
+    .gallery__grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 639.98px) {
+    .gallery {
+      --gallery-gap: 32px;
+    }
+
+    .gallery__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+  }
+</style>
+
+<script>
+  // Videos tabs: click or arrow keys (roving tabindex, automatic activation) pick the player's
+  // playlist (Highlights / Full).
+  type Gallery = HTMLElement & { galleryReady?: boolean };
+
+  function initGallery(gallery: Gallery) {
+    if (gallery.galleryReady) return;
+    gallery.galleryReady = true;
+
+    const tabs = Array.from(gallery.querySelectorAll<HTMLButtonElement>('[data-gallery-tab]'));
+    const panel = gallery.querySelector<HTMLElement>('[data-gallery-videos]');
+    const player = panel?.querySelector<HTMLElement>('[data-player]');
+
+    const select = (tab: HTMLButtonElement) => {
+      tabs.forEach((other) => {
+        const selected = other === tab;
+        other.setAttribute('aria-selected', String(selected));
+        other.setAttribute('tabindex', selected ? '0' : '-1');
+      });
+      panel?.setAttribute('aria-labelledby', tab.id);
+      player?.dispatchEvent(new CustomEvent('player:list', { detail: { key: tab.dataset.galleryTab } }));
+    };
+
+    tabs.forEach((tab, index) => {
+      tab.addEventListener('click', () => select(tab));
+      tab.addEventListener('keydown', (event) => {
+        const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[event.key];
+        const jump = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : undefined;
+        if (step === undefined && jump === undefined) return;
+        event.preventDefault();
+        const next = tabs[jump ?? (index + step! + tabs.length) % tabs.length];
+        next.focus();
+        select(next);
+      });
+    });
+  }
+
+  const initGalleries = () => document.querySelectorAll<Gallery>('[data-gallery]').forEach(initGallery);
+
+  initGalleries();
+  document.addEventListener('astro:page-load', initGalleries);
+</script>
